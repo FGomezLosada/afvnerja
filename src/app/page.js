@@ -1,12 +1,12 @@
-import { supabase } from '@/lib/supabase'
-
-export default async function Home() {
-  const { data, error } = await supabase.from('socios').select('*')
-  
+export default function Home() {
   return (
-    <main>
-      <h1>AFV Nerja — Conexión Supabase</h1>
-      <p>{error ? 'Error: ' + error.message : 'Conexión correcta ✅'}</p>
-    </main>
+    <div style={{ padding: '40px 24px', maxWidth: '1200px', margin: '0 auto' }}>
+      <h1 style={{ color: 'var(--azul-marino)', fontSize: '32px', fontWeight: '600' }}>
+        Bienvenido a C.F.V. Nerja
+      </h1>
+      <p style={{ color: 'var(--azul-medio)', marginTop: '12px', fontSize: '16px' }}>
+        Temporada 2025-26
+      </p>
+    </div>
   )
 }
