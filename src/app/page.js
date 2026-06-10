@@ -69,7 +69,7 @@ export default async function Home() {
         margin: '0 auto',
         padding: '32px 24px',
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr 1fr',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
         gap: '24px',
       }}>
 
