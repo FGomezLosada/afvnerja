@@ -60,7 +60,7 @@ export default async function Estadisticas() {
         {[
           { label: 'Total eventos', valor: totalEventos },
           { label: 'Entrenos', valor: totalEntrenos },
-          { label: 'Partidos', valor: totalPartidos },
+          { label: 'Partidos/Torneos', valor: totalPartidos },
           { label: 'Socios', valor: lista.length },
         ].map(s => (
           <div key={s.label} style={{
