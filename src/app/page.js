@@ -12,15 +12,16 @@ export default async function Home() {
   // Obtener top 10 asistencias
   const { data: asistencias } = await supabase
     .from('asistencias')
-    .select('socio_id, socios(nombre_completo, apodo)')
-    .eq('estado', 'asistio')
+    .select('socio_id, estado, socios(nombre_completo, apodo)')
+    .in('estado', ['asistio', 'no_aparecio'])
 
   // Calcular ranking
   const ranking = {}
   if (asistencias) {
     asistencias.forEach(a => {
       const nombre = a.socios?.apodo || a.socios?.nombre_completo || 'Desconocido'
-      ranking[nombre] = (ranking[nombre] || 0) + 1
+      if (a.estado === 'asistio') ranking[nombre] = (ranking[nombre] || 0) + 1
+      else if (a.estado === 'no_aparecio') ranking[nombre] = (ranking[nombre] || 0) - 1
     })
   }
   const top10 = Object.entries(ranking)
