@@ -36,15 +36,17 @@ export default async function Home() {
         backgroundColor: 'var(--azul-marino)',
         padding: '40px 24px',
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         justifyContent: 'space-between',
         maxWidth: '100%',
+        flexWrap: 'wrap',
+        gap: '16px',
       }}>
         <div style={{ maxWidth: '600px' }}>
           <div style={{ color: 'var(--azul-claro)', fontSize: '13px', marginBottom: '8px' }}>
             Temporada 2025-26
           </div>
-          <h1 style={{ color: 'var(--blanco)', fontSize: '32px', fontWeight: '600', lineHeight: '1.2', marginBottom: '12px' }}>
+          <h1 style={{ color: 'var(--blanco)', fontSize: 'clamp(22px, 5vw, 32px)', fontWeight: '600', lineHeight: '1.2', marginBottom: '12px' }}>
             Asociación de Fútbol<br />Veteranos de Nerja
           </h1>
           <p style={{ color: 'var(--azul-claro)', fontSize: '15px' }}>
@@ -56,7 +58,9 @@ export default async function Home() {
           borderRadius: '12px',
           padding: '16px 24px',
           textAlign: 'center',
-          minWidth: '120px',
+          minWidth: '100px',
+alignSelf: 'flex-end',
+display: 'none',
         }}>
           <div style={{ color: 'var(--blanco)', fontSize: '28px', fontWeight: '700' }}>2025</div>
           <div style={{ color: 'var(--azul-claro)', fontSize: '12px' }}>— 26</div>
