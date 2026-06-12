@@ -79,7 +79,7 @@ export default async function Estadisticas() {
 
       {/* Contenedor con scroll horizontal en móvil */}
       <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', borderRadius: '12px', border: '1px solid var(--azul-claro)', paddingRight: '16px' }}>
-        <div style={{ minWidth: '540px' }}>
+        <div style={{ minWidth: '600px' }}>
 
           {/* Cabecera tabla */}
           <div style={{
