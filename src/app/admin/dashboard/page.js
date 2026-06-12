@@ -14,9 +14,13 @@ export default function Dashboard() {
     async function cargarDatos() {
       // Verificar sesión
       const { data: { session } } = await supabase.auth.getSession()
+      
       if (!session) {
-        router.push('/admin')
-        return
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          router.push('/admin')
+          return
+        }
       }
       setUsuario(session.user)
 
