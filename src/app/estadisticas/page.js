@@ -78,7 +78,7 @@ export default async function Estadisticas() {
       </div>
 
       {/* Contenedor con scroll horizontal en móvil */}
-      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', borderRadius: '12px', border: '1px solid var(--azul-claro)' }}>
+      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', borderRadius: '12px', border: '1px solid var(--azul-claro)', paddingRight: '16px' }}>
         <div style={{ minWidth: '540px' }}>
 
           {/* Cabecera tabla */}
@@ -86,7 +86,7 @@ export default async function Estadisticas() {
             backgroundColor: 'var(--azul-marino)',
             padding: '12px 20px',
             display: 'grid',
-            gridTemplateColumns: '40px minmax(120px, 1fr) 70px 70px 70px 70px 55px',
+            gridTemplateColumns: '40px minmax(120px, 1fr) 70px 70px 70px 70px 65px',
             gap: '8px',
             color: 'var(--blanco)',
             fontSize: '12px',
@@ -106,7 +106,7 @@ export default async function Estadisticas() {
             <div key={i} style={{
               padding: '10px 20px',
               display: 'grid',
-              gridTemplateColumns: '40px minmax(120px, 1fr) 70px 70px 70px 70px 55px',
+              gridTemplateColumns: '40px minmax(120px, 1fr) 70px 70px 70px 70px 65px',
               gap: '8px',
               alignItems: 'center',
               borderBottom: '1px solid var(--azul-palido)',
