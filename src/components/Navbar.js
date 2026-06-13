@@ -8,7 +8,8 @@ const links = [
   { href: '/estadisticas', label: 'Estadísticas' },
   { href: '/calendario', label: 'Calendario' },
   { href: '/asociacion', label: 'La Asociación' },
-  { href: '/equipaciones', label: 'Equipaciones' },
+  { href: '/socios', label: 'Plantilla' },
+      { href: '/equipaciones', label: 'Equipaciones' },
   { href: '/historico', label: 'Histórico' },
 ]
 
