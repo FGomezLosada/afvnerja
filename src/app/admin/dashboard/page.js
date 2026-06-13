@@ -29,10 +29,18 @@ export default function Dashboard() {
         supabase.from('socios').select('*', { count: 'exact', head: true }).eq('activo', true),
         supabase.from('eventos').select('*', { count: 'exact', head: true }),
         supabase.from('asistencias').select('*', { count: 'exact', head: true }),
-        supabase.from('cuotas').select('*', { count: 'exact', head: true }).eq('estado', 'pendiente'),
+        supabase.from('socios').select('*', { count: 'exact', head: true }).eq('activo', true),
       ])
 
-      setStats({ socios, eventos, asistencias, cuotas_pendientes: cuotas })
+      const { data: cuotasPagadas } = await supabase
+        .from('cuotas')
+        .select('socio_id')
+        .in('estado', ['pagado', 'exento'])
+
+      const pagoIds = cuotasPagadas?.map(c => c.socio_id) || []
+      const pendientes = (socios || 0) - pagoIds.length
+
+      setStats({ socios, eventos, asistencias, cuotas_pendientes: pendientes })
       setLoading(false)
     }
     cargarDatos()
