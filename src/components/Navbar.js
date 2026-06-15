@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { FaFacebook, FaInstagram } from 'react-icons/fa'
 
 const links = [
   { href: '/', label: 'Inicio' },
@@ -38,7 +39,7 @@ export default function Navbar() {
               Veteranos Nerja
             </div>
             <div style={{ color: 'var(--azul-claro)', fontSize: '10px' }}>
-              C.F.V. Nerja
+              A.F.V. Nerja
             </div>
           </div>
         </Link>
@@ -61,15 +62,15 @@ export default function Navbar() {
         {/* Iconos derecha */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <a href="https://www.facebook.com/profile.php?id=61551139957241" target="_blank" rel="noopener noreferrer" style={{
-            color: 'var(--azul-claro)', width: '32px', height: '32px',
+            color: 'var(--azul-claro)', width: '36px', height: '36px',
             borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            backgroundColor: 'rgba(255,255,255,0.1)', textDecoration: 'none', fontSize: '13px', fontWeight: '600'
-          }}>f</a>
+            backgroundColor: 'rgba(255,255,255,0.1)', textDecoration: 'none', fontSize: '22px'
+          }}><FaFacebook /></a>
           <a href="https://www.instagram.com/vetfcnerja" target="_blank" rel="noopener noreferrer" style={{
-            color: 'var(--azul-claro)', width: '32px', height: '32px',
+            color: 'var(--azul-claro)', width: '36px', height: '36px',
             borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            backgroundColor: 'rgba(255,255,255,0.1)', textDecoration: 'none', fontSize: '11px', fontWeight: '600'
-          }}>ig</a>
+            backgroundColor: 'rgba(255,255,255,0.1)', textDecoration: 'none', fontSize: '22px'
+          }}><FaInstagram /></a>
           <Link href="/admin" style={{ color: 'var(--azul-claro)', fontSize: '18px', marginLeft: '4px' }}>🔒</Link>
 
           {/* Botón hamburguesa — solo móvil */}
