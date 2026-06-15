@@ -60,12 +60,12 @@ export default function Navbar() {
 
         {/* Iconos derecha */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" style={{
+          <a href="https://www.facebook.com/profile.php?id=61551139957241" target="_blank" rel="noopener noreferrer" style={{
             color: 'var(--azul-claro)', width: '32px', height: '32px',
             borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center',
             backgroundColor: 'rgba(255,255,255,0.1)', textDecoration: 'none', fontSize: '13px', fontWeight: '600'
           }}>f</a>
-          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" style={{
+          <a href="https://www.instagram.com/vetfcnerja" target="_blank" rel="noopener noreferrer" style={{
             color: 'var(--azul-claro)', width: '32px', height: '32px',
             borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center',
             backgroundColor: 'rgba(255,255,255,0.1)', textDecoration: 'none', fontSize: '11px', fontWeight: '600'
