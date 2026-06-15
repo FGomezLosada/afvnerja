@@ -8,6 +8,8 @@ const posicionIcon = (p) => {
   return '⚽'
 }
 
+export const revalidate = 0
+
 export default async function Estadisticas() {
   const { data: asistencias } = await supabase
     .from('asistencias')
@@ -79,7 +81,7 @@ export default async function Estadisticas() {
 
       {/* Contenedor con scroll horizontal en móvil */}
       <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', borderRadius: '12px', border: '1px solid var(--azul-claro)', paddingRight: '16px' }}>
-        <div style={{ minWidth: '600px' }}>
+        <div style={{ minWidth: '0px' }}>
 
           {/* Cabecera tabla */}
           <div style={{

@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase'
 
+export const revalidate = 0
+
 export default async function Home() {
   // Obtener próximos eventos
   const { data: eventos } = await supabase
