@@ -18,6 +18,7 @@ export default function AdminSocios() {
   const [mensaje, setMensaje] = useState('')
   const [socioEditando, setSocioEditando] = useState(null)
   const [busqueda, setBusqueda] = useState('')
+  const [subiendoFoto, setSubiendoFoto] = useState(false)
   const router = useRouter()
 
   const formInicial = {
@@ -121,6 +122,33 @@ posiciones: form.posiciones,
     (s.apodo || s.nombre_completo || '').toLowerCase().includes(busqueda.toLowerCase())
   )
 
+  async function subirFoto(e, socioId) {
+    const archivo = e.target.files[0]
+    if (!archivo) return
+    setSubiendoFoto(true)
+
+    const extension = archivo.name.split('.').pop()
+    const nombreArchivo = `socio-${socioId}.${extension}`
+
+    const { error: errUpload } = await supabase.storage
+      .from('fotos')
+      .upload(nombreArchivo, archivo, { upsert: true })
+
+    if (errUpload) {
+      setMensaje('Error subiendo foto: ' + errUpload.message)
+      setSubiendoFoto(false)
+      return
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('fotos')
+      .getPublicUrl(nombreArchivo)
+
+    await supabase.from('socios').update({ foto_url: urlData.publicUrl }).eq('id', socioId)
+    setMensaje('✅ Foto actualizada')
+    setSubiendoFoto(false)
+    cargarSocios()
+  }
   const campo = (label, key, type = 'text') => (
     <div style={{ marginBottom: '14px' }}>
       <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: 'var(--azul-marino)', marginBottom: '4px' }}>
@@ -288,6 +316,14 @@ posiciones: form.posiciones,
                 padding: '6px 14px', backgroundColor: 'var(--azul-palido)', color: 'var(--azul-marino)',
                 border: '1px solid var(--azul-claro)', borderRadius: '6px', fontSize: '12px', cursor: 'pointer',
               }}>Editar</button>
+              <label style={{
+                padding: '6px 14px', backgroundColor: 'var(--azul-palido)', color: 'var(--azul-marino)',
+                border: '1px solid var(--azul-claro)', borderRadius: '6px', fontSize: '12px', cursor: 'pointer',
+              }}>
+                {subiendoFoto ? '⏳' : '📷'}
+                <input type="file" accept="image/*" style={{ display: 'none' }}
+                  onChange={e => subirFoto(e, socio.id)} />
+              </label>
               <button onClick={() => toggleActivo(socio)} style={{
                 padding: '6px 14px',
                 backgroundColor: socio.activo ? '#FEF9C3' : '#DCFCE7',
