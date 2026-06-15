@@ -144,7 +144,8 @@ posiciones: form.posiciones,
       .from('fotos')
       .getPublicUrl(nombreArchivo)
 
-    await supabase.from('socios').update({ foto_url: urlData.publicUrl }).eq('id', socioId)
+    const urlConCache = `${urlData.publicUrl}?t=${Date.now()}`
+    await supabase.from('socios').update({ foto_url: urlConCache }).eq('id', socioId)
     setMensaje('✅ Foto actualizada')
     setSubiendoFoto(false)
     cargarSocios()
