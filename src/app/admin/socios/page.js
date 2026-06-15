@@ -202,7 +202,7 @@ posiciones: form.posiciones,
             {socioEditando ? 'Editar socio' : 'Nuevo socio'}
           </h2>
           <form onSubmit={guardarSocio}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0 16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0 16px' }}>
               {campo('Nombre completo *', 'nombre_completo')}
               {campo('Apodo / nombre en el grupo', 'apodo')}
               {campo('Teléfono', 'telefono', 'tel')}
