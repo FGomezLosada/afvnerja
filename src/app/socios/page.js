@@ -24,7 +24,7 @@ export default function Socios() {
   const [maxAsist, setMaxAsist] = useState(1)
   const [filtro, setFiltro] = useState('todos')
   const [loading, setLoading] = useState(true)
-  const totalEventos = 41
+  const [totalEventos, setTotalEventos] = useState(42)
 
   useEffect(() => {
     async function cargar() {
@@ -51,10 +51,16 @@ export default function Socios() {
 
       const max = Math.max(...(soc?.map(s => sm[s.id]?.total || 0) || [1]))
 
+      const { data: evTotal } = await supabase
+        .from('eventos')
+        .select('id')
+        .eq('cuenta_asistencia', true)
+      
       setSocios(soc || [])
       setStatsMap(sm)
       setRankMap(rm)
       setMaxAsist(max)
+      setTotalEventos(evTotal?.length || 42)
       setLoading(false)
     }
     cargar()
@@ -143,7 +149,7 @@ export default function Socios() {
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.7)', fontWeight: '600' }}>#{rank}</div>
-                      <img src="/logo-cfv.png" alt="CFV" style={{ width: '28px', height: '28px', objectFit: 'contain', filter: 'brightness(0) invert(1) opacity(0.8)' }} />
+                      <img src="/logo-cfv-transparente.png" alt="CFV" style={{ width: '28px', height: '28px', objectFit: 'contain', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} />
                     </div>
                   </div>
                 </div>
@@ -182,8 +188,8 @@ export default function Socios() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px' }}>
                     {[
                       { label: 'ASI', valor: stats.total },
-                      { label: 'GOL', valor: stats.goles },
                       { label: '%', valor: `${pct}` },
+                      { label: 'GOL', valor: stats.goles },
                     ].map(stat => (
                       <div key={stat.label} style={{ textAlign: 'center' }}>
                         <div style={{ fontSize: '14px', fontWeight: '800', color: accentColor, lineHeight: 1, textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>
