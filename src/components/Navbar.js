@@ -6,11 +6,11 @@ import { FaFacebook, FaInstagram } from 'react-icons/fa'
 
 const links = [
   { href: '/', label: 'Inicio' },
-  { href: '/estadisticas', label: 'Estadísticas' },
   { href: '/calendario', label: 'Calendario' },
-  { href: '/asociacion', label: 'La Asociación' },
+  { href: '/estadisticas', label: 'Estadísticas' },
   { href: '/socios', label: 'Plantilla' },
-      { href: '/equipaciones', label: 'Equipaciones' },
+  { href: '/equipaciones', label: 'Equipaciones' },
+  { href: '/asociacion', label: 'La Asociación' },
   { href: '/historico', label: 'Histórico' },
 ]
 

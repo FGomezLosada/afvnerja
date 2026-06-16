@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
 const tipoOpciones = ['entreno', 'partido', 'torneo', 'viaje', 'social', 'benefico']
+const tiposSinAsistencia = ['partido'] // estos por defecto no cuentan asistencia
 
 const estadoOpciones = ['programado', 'confirmado', 'cancelado', 'jugado']
 
@@ -34,6 +35,7 @@ export default function AdminEventos() {
     beneficiario: '',
     min_jugadores: 14,
     lista_entreno_activa: false,
+    torneo_id: '',
   })
 
   useEffect(() => {
@@ -61,6 +63,7 @@ export default function AdminEventos() {
       estado: 'programado', cuenta_asistencia: true, es_benefico: false,
       recaudacion_benefica: '', beneficiario: '', min_jugadores: 14,
       lista_entreno_activa: false,
+    torneo_id: '',
     })
     setEventoEditando(null)
   }
@@ -83,6 +86,7 @@ export default function AdminEventos() {
       beneficiario: evento.beneficiario || '',
       min_jugadores: evento.min_jugadores || 14,
       lista_entreno_activa: evento.lista_entreno_activa ?? false,
+      torneo_id: evento.torneo_id || '',
     })
     setEventoEditando(evento.id)
     setMostrarForm(true)
@@ -119,6 +123,7 @@ export default function AdminEventos() {
       beneficiario: form.beneficiario || null,
       min_jugadores: form.min_jugadores,
       lista_entreno_activa: form.lista_entreno_activa,
+      torneo_id: form.torneo_id || null,
     }
 
     let error
@@ -211,6 +216,23 @@ export default function AdminEventos() {
               {campo('Recaudación benéfica (€)', 'recaudacion_benefica', 'number')}
               {campo('Beneficiario', 'beneficiario')}
             </div>
+            {/* Selector de torneo padre */}
+            {form.tipo === 'partido' && (
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: 'var(--azul-marino)', marginBottom: '4px' }}>
+                  Vincular a torneo (opcional)
+                </label>
+                <select value={form.torneo_id} onChange={e => setForm({ ...form, torneo_id: e.target.value })}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--azul-claro)', borderRadius: '6px', fontSize: '13px' }}>
+                  <option value="">— Partido independiente —</option>
+                  {eventos.filter(ev => ev.tipo === 'torneo').map(ev => (
+                    <option key={ev.id} value={ev.id}>
+                      {new Date(ev.fecha + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} — {ev.titulo || 'Torneo'}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', marginBottom: '20px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
                 <input type="checkbox" checked={form.cuenta_asistencia} onChange={e => setForm({ ...form, cuenta_asistencia: e.target.checked })} />

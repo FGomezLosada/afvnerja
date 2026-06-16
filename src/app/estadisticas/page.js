@@ -51,6 +51,29 @@ export default async function Estadisticas() {
   const lista = Object.values(ranking).sort((a, b) => b.total - a.total)
   const maxTotal = lista[0]?.total || 1
 
+  // Ranking goleadores
+  const goleadores = {}
+  if (asistencias) {
+    asistencias.forEach(a => {
+      const nombre = a.socios?.apodo || a.socios?.nombre_completo || 'Desconocido'
+      if (!goleadores[nombre]) goleadores[nombre] = 0
+    })
+  }
+
+  const { data: golesData } = await supabase
+    .from('goles')
+    .select('cantidad, socios(nombre_completo, apodo)')
+
+  const rankingGoles = {}
+  golesData?.forEach(g => {
+    const nombre = g.socios?.apodo || g.socios?.nombre_completo || 'Desconocido'
+    rankingGoles[nombre] = (rankingGoles[nombre] || 0) + (g.cantidad || 1)
+  })
+
+  const listaGoles = Object.entries(rankingGoles)
+    .sort((a, b) => b[1] - a[1])
+  const maxGoles = listaGoles[0]?.[1] || 1
+
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
 
@@ -177,7 +200,60 @@ export default async function Estadisticas() {
 
         </div>
       </div>
-
+{/* Ranking goleadores */}
+      <div style={{ marginTop: '40px' }}>
+        <h2 style={{ color: 'var(--azul-marino)', fontSize: '20px', fontWeight: '600', marginBottom: '16px' }}>
+          ⚽ Ranking de goleadores
+        </h2>
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', borderRadius: '12px', border: '1px solid var(--azul-claro)', paddingRight: '16px' }}>
+          <div style={{ minWidth: '400px' }}>
+            <div style={{
+              backgroundColor: 'var(--azul-marino)', padding: '12px 20px',
+              display: 'grid', gridTemplateColumns: '40px 1fr 80px 80px',
+              gap: '8px', color: 'var(--blanco)', fontSize: '12px', fontWeight: '600',
+            }}>
+              <span>#</span>
+              <span>Socio</span>
+              <span style={{ textAlign: 'center' }}>Goles</span>
+              <span style={{ textAlign: 'center' }}>Gráfico</span>
+            </div>
+            {listaGoles.length === 0 ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--azul-medio)', fontSize: '13px' }}>
+                No hay goles registrados todavía
+              </div>
+            ) : listaGoles.map(([nombre, goles], i) => (
+              <div key={nombre} style={{
+                padding: '10px 20px',
+                display: 'grid',
+                gridTemplateColumns: '40px 1fr 80px 80px',
+                gap: '8px',
+                alignItems: 'center',
+                borderBottom: '1px solid var(--azul-palido)',
+                backgroundColor: i % 2 === 0 ? 'var(--blanco)' : 'var(--azul-palido)',
+              }}>
+                <span style={{
+                  fontSize: '13px', fontWeight: '600',
+                  color: i === 0 ? '#B07800' : i === 1 ? '#888' : i === 2 ? '#993C1D' : 'var(--azul-medio)',
+                }}>
+                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
+                </span>
+                <span style={{ fontSize: '13px', fontWeight: '500', color: 'var(--azul-marino)' }}>{nombre}</span>
+                <span style={{ textAlign: 'center', fontSize: '14px', fontWeight: '700', color: 'var(--naranja)' }}>
+                  ⚽ {goles}
+                </span>
+                <div style={{ height: '6px', backgroundColor: 'var(--azul-claro)', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{
+                    width: `${(goles / maxGoles) * 100}%`,
+                    height: '100%',
+                    backgroundColor: 'var(--naranja)',
+                    borderRadius: '3px',
+                  }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
