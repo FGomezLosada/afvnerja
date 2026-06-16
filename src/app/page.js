@@ -11,6 +11,20 @@ export default async function Home() {
     .order('fecha', { ascending: true })
     .limit(3)
 
+  // Obtener goles temporada actual y histórico
+  const { data: golesData } = await supabase
+    .from('goles')
+    .select('cantidad, socios(apodo, nombre_completo)')
+
+  const rankingGoles = {}
+  golesData?.forEach(g => {
+    const nombre = g.socios?.apodo || g.socios?.nombre_completo || 'Desconocido'
+    rankingGoles[nombre] = (rankingGoles[nombre] || 0) + (g.cantidad || 1)
+  })
+  const topGoleadores = Object.entries(rankingGoles)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+
   // Obtener top 10 asistencias
   const { data: asistencias } = await supabase
     .from('asistencias')
@@ -88,7 +102,7 @@ display: 'none',
           padding: '20px',
         }}>
           <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
-            🏆 Top 10 — Temporada
+            🏆 Top 10 Asistencias — Temporada
           </h2>
           {top10.length === 0 ? (
             <p style={{ color: '#999', fontSize: '13px' }}>Sin datos aún</p>
@@ -176,6 +190,43 @@ display: 'none',
             color: 'var(--azul-medio)',
             textDecoration: 'none',
           }}>Ver calendario completo →</a>
+        </div>
+
+{/* TOP GOLEADORES */}
+        <div style={{
+          backgroundColor: 'var(--blanco)',
+          border: '1px solid var(--azul-claro)',
+          borderRadius: '12px',
+          padding: '20px',
+        }}>
+          <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
+            ⚽ Top Goleadores — Temporada
+          </h2>
+          {topGoleadores.length === 0 ? (
+            <p style={{ color: '#999', fontSize: '13px' }}>Sin goles registrados aún</p>
+          ) : (
+            topGoleadores.map(([nombre, goles], i) => (
+              <div key={nombre} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '6px 0',
+                borderBottom: i < topGoleadores.length - 1 ? '1px solid var(--azul-palido)' : 'none',
+              }}>
+                <span style={{
+                  minWidth: '20px', fontSize: '12px', fontWeight: '600',
+                  color: i === 0 ? '#B07800' : i === 1 ? '#888' : i === 2 ? '#993C1D' : 'var(--azul-medio)',
+                }}>
+                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
+                </span>
+                <span style={{ flex: 1, fontSize: '13px', color: 'var(--negro)' }}>{nombre}</span>
+                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--naranja)' }}>⚽ {goles}</span>
+              </div>
+            ))
+          )}
+          <a href="/estadisticas" style={{ display: 'block', marginTop: '12px', fontSize: '12px', color: 'var(--azul-medio)', textDecoration: 'none' }}>
+            Ver ranking completo →
+          </a>
         </div>
 
         {/* STATS RÁPIDAS */}
