@@ -16,6 +16,11 @@ export default function AdminEventos() {
   const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState('')
   const [eventoEditando, setEventoEditando] = useState(null)
+  const [goles, setGoles] = useState([])
+  const [nuevoGolSocio, setNuevoGolSocio] = useState('')
+  const [nuevoGolCantidad, setNuevoGolCantidad] = useState(1)
+  const [nuevoGolNotas, setNuevoGolNotas] = useState('')
+  const [socios, setSocios] = useState([])
   const router = useRouter()
 
   const [form, setForm] = useState({
@@ -48,11 +53,12 @@ export default function AdminEventos() {
   }, [])
 
   async function cargarEventos() {
-    const { data } = await supabase
-      .from('eventos')
-      .select('*')
-      .order('fecha', { ascending: false })
-    setEventos(data || [])
+    const [{ data: ev }, { data: soc }] = await Promise.all([
+      supabase.from('eventos').select('*').order('fecha', { ascending: false }),
+      supabase.from('socios').select('id, apodo, nombre_completo').eq('activo', true).order('apodo'),
+    ])
+    setEventos(ev || [])
+    setSocios(soc || [])
     setLoading(false)
   }
 
@@ -91,6 +97,7 @@ export default function AdminEventos() {
     setEventoEditando(evento.id)
     setMostrarForm(true)
     window.scrollTo(0, 0)
+    cargarGoles(evento.id).then(g => setGoles(g))
   }
 
   async function guardarEvento(e) {
@@ -150,6 +157,27 @@ export default function AdminEventos() {
     if (!confirm('¿Seguro que quieres eliminar este evento?')) return
     await supabase.from('eventos').delete().eq('id', id)
     cargarEventos()
+  }
+
+  async function cargarGoles(eventoId) {
+    const { data } = await supabase
+      .from('goles')
+      .select('id, cantidad, notas, socios(id, apodo, nombre_completo)')
+      .eq('evento_id', eventoId)
+    return data || []
+  }
+
+  async function añadirGol(eventoId, socioId, cantidad, notas) {
+    await supabase.from('goles').insert({
+      evento_id: eventoId,
+      socio_id: socioId,
+      cantidad: parseInt(cantidad) || 1,
+      notas: notas || null,
+    })
+  }
+
+  async function eliminarGol(golId) {
+    await supabase.from('goles').delete().eq('id', golId)
   }
 
   const campo = (label, key, type = 'text', opciones = null) => (
@@ -254,6 +282,73 @@ export default function AdminEventos() {
               {guardando ? 'Guardando...' : eventoEditando ? 'Actualizar evento' : 'Crear evento'}
             </button>
           </form>
+
+          {/* Sección goles — solo al editar */}
+          {eventoEditando && (
+            <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid var(--azul-claro)' }}>
+              <h3 style={{ color: 'var(--azul-marino)', fontSize: '15px', fontWeight: '600', marginBottom: '16px' }}>
+                ⚽ Goles del evento
+              </h3>
+              {goles.length > 0 && (
+                <div style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {goles.map(g => (
+                    <div key={g.id} style={{
+                      display: 'flex', alignItems: 'center', gap: '10px',
+                      backgroundColor: 'var(--azul-palido)', borderRadius: '8px', padding: '8px 12px',
+                    }}>
+                      <span style={{ fontSize: '13px', fontWeight: '500', color: 'var(--azul-marino)', flex: 1 }}>
+                        ⚽ {g.socios?.apodo || g.socios?.nombre_completo} × {g.cantidad}
+                        {g.notas ? ` (${g.notas})` : ''}
+                      </span>
+                      <button onClick={async () => {
+                        await eliminarGol(g.id)
+                        cargarGoles(eventoEditando).then(gl => setGoles(gl))
+                      }} style={{
+                        padding: '4px 10px', backgroundColor: '#FEE2E2', color: '#C92F2F',
+                        border: '1px solid #FCA5A5', borderRadius: '6px', fontSize: '11px', cursor: 'pointer',
+                      }}>Eliminar</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 1fr auto', gap: '8px', alignItems: 'end' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'var(--azul-marino)', marginBottom: '4px' }}>Socio</label>
+                  <select value={nuevoGolSocio} onChange={e => setNuevoGolSocio(e.target.value)}
+                    style={{ width: '100%', padding: '7px 10px', border: '1px solid var(--azul-claro)', borderRadius: '6px', fontSize: '12px' }}>
+                    <option value="">— Selecciona —</option>
+                    {socios.map(s => (
+                      <option key={s.id} value={s.id}>{s.apodo || s.nombre_completo}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'var(--azul-marino)', marginBottom: '4px' }}>Cant.</label>
+                  <input type="number" min="1" max="10" value={nuevoGolCantidad}
+                    onChange={e => setNuevoGolCantidad(e.target.value)}
+                    style={{ width: '100%', padding: '7px 10px', border: '1px solid var(--azul-claro)', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: '500', color: 'var(--azul-marino)', marginBottom: '4px' }}>Notas (ej: penalti)</label>
+                  <input type="text" value={nuevoGolNotas} onChange={e => setNuevoGolNotas(e.target.value)}
+                    style={{ width: '100%', padding: '7px 10px', border: '1px solid var(--azul-claro)', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }} />
+                </div>
+                <button onClick={async () => {
+                  if (!nuevoGolSocio) return
+                  await añadirGol(eventoEditando, nuevoGolSocio, nuevoGolCantidad, nuevoGolNotas)
+                  cargarGoles(eventoEditando).then(g => setGoles(g))
+                  setNuevoGolSocio('')
+                  setNuevoGolCantidad(1)
+                  setNuevoGolNotas('')
+                }} style={{
+                  padding: '7px 16px', backgroundColor: 'var(--azul-marino)', color: 'white',
+                  border: 'none', borderRadius: '6px', fontSize: '12px', cursor: 'pointer',
+                }}>
+                  + Añadir
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
