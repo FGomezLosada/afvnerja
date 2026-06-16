@@ -11,6 +11,56 @@ export default async function Home() {
     .order('fecha', { ascending: true })
     .limit(3)
 
+// Stats de la temporada
+  const { data: temporadaActiva } = await supabase
+    .from('temporadas')
+    .select('id')
+    .eq('activa', true)
+    .single()
+
+  const tempId = temporadaActiva?.id
+
+  const [
+    { count: sociosActivos },
+    { data: eventosTemporada },
+    { data: asistenciasTemporada },
+    { data: eventosBenefico },
+  ] = await Promise.all([
+    supabase.from('socios').select('*', { count: 'exact', head: true }).eq('activo', true),
+    supabase.from('eventos').select('id, tipo, estado').eq('temporada_id', tempId),
+    supabase.from('asistencias').select('id, evento_id, estado').eq('estado', 'asistio'),
+    supabase.from('eventos').select('recaudacion_benefica').eq('temporada_id', tempId).eq('es_benefico', true),
+  ])
+
+  const entronosFinalizados = eventosTemporada?.filter(e =>
+    e.tipo === 'entreno'
+  ).length || 0
+
+  const partidosTemp = eventosTemporada?.filter(e => e.tipo === 'partido').length || 0
+  const torneosTemp = eventosTemporada?.filter(e => e.tipo === 'torneo').length || 0
+
+  const eventoIdsTemp = eventosTemporada?.map(e => e.id) || []
+  const asistenciasTemp = asistenciasTemporada?.filter(a => eventoIdsTemp.includes(a.evento_id)).length || 0
+
+  const entrenoIds = eventosTemporada?.filter(e => e.tipo === 'entreno').map(e => e.id) || []
+  const asistenciasEntrenos = asistenciasTemporada?.filter(a => entrenoIds.includes(a.evento_id)).length || 0
+
+  const mediaAsistencia = entronosFinalizados > 0
+    ? (asistenciasEntrenos / entronosFinalizados).toFixed(1)
+    : 0
+
+  const totalBenefico = eventosBenefico?.reduce((sum, e) => sum + (e.recaudacion_benefica || 0), 0) || 0
+
+  const statsTemporada = {
+    socios: sociosActivos || 0,
+    entrenos: entronosFinalizados,
+    asistencias: asistenciasTemp,
+    partidos: partidosTemp,
+    torneos: torneosTemp,
+    mediaAsistencia,
+    benefico: totalBenefico,
+  }
+
   // Obtener goles temporada actual y histórico
   const { data: golesData } = await supabase
     .from('goles')
@@ -241,10 +291,13 @@ display: 'none',
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             {[
-              { label: 'Socios', valor: '59' },
-              { label: 'Eventos', valor: '40' },
-              { label: 'Asistencias', valor: '672' },
-              { label: 'Partidos', valor: '4' },
+              { label: 'Socios activos', valor: statsTemporada.socios },
+              { label: 'Entrenos finalizados', valor: statsTemporada.entrenos },
+              { label: 'Asistencias totales', valor: statsTemporada.asistencias },
+              { label: 'Media asistencia', valor: statsTemporada.mediaAsistencia },
+              { label: 'Partidos', valor: statsTemporada.partidos },
+              { label: 'Torneos', valor: statsTemporada.torneos },
+              { label: 'Recaudado benéfico', valor: `${statsTemporada.benefico}€` },
             ].map(stat => (
               <div key={stat.label} style={{
                 backgroundColor: 'var(--azul-palido)',
@@ -252,7 +305,7 @@ display: 'none',
                 padding: '12px',
                 textAlign: 'center',
               }}>
-                <div style={{ fontSize: '24px', fontWeight: '700', color: 'var(--azul-marino)' }}>{stat.valor}</div>
+                <div style={{ fontSize: '22px', fontWeight: '700', color: 'var(--azul-marino)' }}>{stat.valor}</div>
                 <div style={{ fontSize: '11px', color: 'var(--azul-medio)', marginTop: '2px' }}>{stat.label}</div>
               </div>
             ))}
