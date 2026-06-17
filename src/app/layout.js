@@ -1,11 +1,12 @@
 import { Inter } from 'next/font/google'
 import './globals.css'
 import Navbar from '@/components/Navbar'
+import Footer from '@/components/Footer'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'C.F.V. Nerja — Veteranos',
+  title: 'A.F.V. Nerja — Veteranos',
   description: 'Web oficial de la Asociación de Fútbol Veteranos de Nerja',
 }
 
@@ -17,6 +18,7 @@ export default function RootLayout({ children }) {
         <main>
           {children}
         </main>
+        <Footer />
       </body>
     </html>
   )
