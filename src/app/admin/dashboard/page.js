@@ -116,6 +116,7 @@ export default function Dashboard() {
           { label: 'Gestionar eventos', icono: '📅', href: '/admin/eventos', desc: 'Crear y editar eventos' },
           { label: 'Gestionar cuotas', icono: '💰', href: '/admin/cuotas', desc: 'Estado de pagos por socio' },
           { label: 'Gestionar gastos', icono: '💸', href: '/admin/gastos', desc: 'Registro económico' },
+          { label: 'Patrocinadores', icono: '🏢', href: '/admin/patrocinadores', desc: 'Logos y datos de patrocinadores' },
           { label: 'Configuración', icono: '⚙️', href: '/admin/config', desc: 'Temporadas y ajustes' },
         ].map(accion => (
           <a key={accion.href} href={accion.href} style={{

@@ -269,7 +269,7 @@ export default async function Estadisticas() {
           🏅 Ranking histórico de goleadores
         </h2>
         <p style={{ color: 'var(--azul-medio)', fontSize: '13px', marginBottom: '16px' }}>
-          Acumulado de todas las temporadas
+          Acumulado desde 2025
         </p>
         <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', borderRadius: '12px', border: '1px solid var(--azul-claro)', paddingRight: '16px' }}>
           <div style={{ minWidth: '400px' }}>
