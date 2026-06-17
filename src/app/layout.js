@@ -8,6 +8,15 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata = {
   title: 'A.F.V. Nerja — Veteranos',
   description: 'Web oficial de la Asociación de Fútbol Veteranos de Nerja',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
+  openGraph: {
+    title: 'A.F.V. Nerja — Veteranos',
+    description: 'Asociación de Fútbol Veteranos de Nerja · Axarquía · Costa del Sol',
+    images: ['/logo-cfv.png'],
+  },
 }
 
 export default function RootLayout({ children }) {

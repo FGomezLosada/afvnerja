@@ -1,3 +1,6 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
 const tipoConfig = {
@@ -9,15 +12,30 @@ const tipoConfig = {
   benefico: { color: '#C92F2F',            icono: '❤️', label: 'Benéfico' },
 }
 
-export default async function Calendario() {
-  const { data: eventos } = await supabase
-    .from('eventos')
-    .select('*')
-    .order('fecha', { ascending: true })
+export default function Calendario() {
+  const [eventos, setEventos] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [filtro, setFiltro] = useState('todos')
+
+  useEffect(() => {
+    async function cargar() {
+      const { data } = await supabase
+        .from('eventos')
+        .select('*')
+        .order('fecha', { ascending: false })
+      setEventos(data || [])
+      setLoading(false)
+    }
+    cargar()
+  }, [])
+
+  const eventosFiltrados = filtro === 'todos'
+    ? eventos
+    : eventos.filter(e => e.tipo === filtro)
 
   // Agrupar por mes
   const meses = {}
-  eventos?.forEach(e => {
+  eventosFiltrados.forEach(e => {
     const fecha = new Date(e.fecha + 'T12:00:00')
     const clave = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`
     const nombreMes = fecha.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
@@ -27,32 +45,44 @@ export default async function Calendario() {
 
   const hoy = new Date().toISOString().split('T')[0]
 
+  if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--azul-medio)' }}>Cargando calendario...</div>
+
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', padding: '32px 24px' }}>
 
       <h1 style={{ color: 'var(--azul-marino)', fontSize: '28px', fontWeight: '600', marginBottom: '8px' }}>
         Calendario — Temporada 2025-26
       </h1>
-      <p style={{ color: 'var(--azul-medio)', fontSize: '14px', marginBottom: '32px' }}>
-        {eventos?.length} eventos registrados
+      <p style={{ color: 'var(--azul-medio)', fontSize: '14px', marginBottom: '24px' }}>
+        {eventos.length} eventos registrados
       </p>
 
-      {/* Leyenda */}
-      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '32px' }}>
-        {Object.entries(tipoConfig).map(([tipo, cfg]) => (
-          <div key={tipo} style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            backgroundColor: 'var(--azul-palido)',
-            border: `1px solid ${cfg.color}`,
-            borderRadius: '20px',
-            padding: '4px 12px',
-            fontSize: '12px',
-            color: 'var(--azul-marino)',
-          }}>
-            <span>{cfg.icono}</span>
-            <span>{cfg.label}</span>
-          </div>
-        ))}
+      {/* Filtros */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '28px' }}>
+        <button onClick={() => setFiltro('todos')} style={{
+          padding: '7px 14px', fontSize: '12px', borderRadius: '20px', cursor: 'pointer',
+          backgroundColor: filtro === 'todos' ? 'var(--azul-marino)' : 'var(--azul-palido)',
+          color: filtro === 'todos' ? 'white' : 'var(--azul-medio)',
+          border: `1px solid ${filtro === 'todos' ? 'var(--azul-marino)' : 'var(--azul-claro)'}`,
+          fontWeight: filtro === 'todos' ? '600' : '400',
+        }}>
+          Todos ({eventos.length})
+        </button>
+        {Object.entries(tipoConfig).map(([tipo, cfg]) => {
+          const count = eventos.filter(e => e.tipo === tipo).length
+          if (count === 0) return null
+          return (
+            <button key={tipo} onClick={() => setFiltro(tipo)} style={{
+              padding: '7px 14px', fontSize: '12px', borderRadius: '20px', cursor: 'pointer',
+              backgroundColor: filtro === tipo ? cfg.color : 'var(--azul-palido)',
+              color: filtro === tipo ? 'white' : 'var(--azul-medio)',
+              border: `1px solid ${filtro === tipo ? cfg.color : 'var(--azul-claro)'}`,
+              fontWeight: filtro === tipo ? '600' : '400',
+            }}>
+              {cfg.icono} {cfg.label} ({count})
+            </button>
+          )
+        })}
       </div>
 
       {/* Eventos por mes */}
@@ -89,20 +119,12 @@ export default async function Calendario() {
                 border: `1px solid ${esFuturo ? cfg.color : 'var(--azul-claro)'}`,
                 borderLeft: `4px solid ${cfg.color}`,
                 borderRadius: '8px',
-                opacity: esPasado && evento.estado === 'cancelado' ? 0.5 : 1,
+                opacity: evento.estado === 'cancelado' ? 0.5 : 1,
               }}>
-
-                {/* Icono tipo */}
-                <div style={{
-                  fontSize: '24px',
-                  minWidth: '36px',
-                  textAlign: 'center',
-                  marginTop: '2px',
-                }}>
+                <div style={{ fontSize: '24px', minWidth: '36px', textAlign: 'center', marginTop: '2px' }}>
                   {cfg.icono}
                 </div>
 
-                {/* Info */}
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
                     <span style={{ fontSize: '14px', fontWeight: '600', color: 'var(--azul-marino)', textTransform: 'capitalize' }}>
@@ -114,15 +136,16 @@ export default async function Calendario() {
                       </span>
                     )}
                     <span style={{
-                      fontSize: '10px',
-                      fontWeight: '600',
-                      padding: '2px 8px',
-                      borderRadius: '10px',
-                      backgroundColor: cfg.color,
-                      color: 'white',
+                      fontSize: '10px', fontWeight: '600', padding: '2px 8px',
+                      borderRadius: '10px', backgroundColor: cfg.color, color: 'white',
                     }}>
                       {cfg.label}
                     </span>
+                    {evento.es_benefico && (
+                      <span style={{ fontSize: '10px', fontWeight: '600', padding: '2px 8px', borderRadius: '10px', backgroundColor: '#C92F2F', color: 'white' }}>
+                        ❤️ Benéfico
+                      </span>
+                    )}
                     {evento.estado === 'cancelado' && (
                       <span style={{ fontSize: '10px', color: '#C92F2F', fontWeight: '600' }}>CANCELADO</span>
                     )}
@@ -141,19 +164,14 @@ export default async function Calendario() {
                   )}
                 </div>
 
-                {/* Resultado si es partido/torneo jugado */}
-                {(evento.tipo === 'partido' || evento.tipo === 'torneo') && 
+                {(evento.tipo === 'partido' || evento.tipo === 'torneo') &&
                  evento.goles_favor !== null && evento.goles_contra !== null && (
                   <div style={{
-                    textAlign: 'center',
-                    minWidth: '60px',
+                    textAlign: 'center', minWidth: '80px',
                     backgroundColor: 'var(--azul-marino)',
-                    borderRadius: '8px',
-                    padding: '6px 10px',
+                    borderRadius: '8px', padding: '6px 10px',
                   }}>
-                    <div style={{ fontSize: '11px', color: 'var(--azul-claro)', marginBottom: '2px' }}>
-                      AFV Nerja
-                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--azul-claro)', marginBottom: '2px' }}>AFV Nerja</div>
                     <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--blanco)' }}>
                       {evento.goles_favor} - {evento.goles_contra}
                     </div>
@@ -167,12 +185,17 @@ export default async function Calendario() {
                     )}
                   </div>
                 )}
-
               </div>
             )
           })}
         </div>
       ))}
+
+      {Object.keys(meses).length === 0 && (
+        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--azul-medio)' }}>
+          No hay eventos de este tipo
+        </div>
+      )}
     </div>
   )
 }
