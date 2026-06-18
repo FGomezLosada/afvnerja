@@ -121,7 +121,7 @@ export default function Socios() {
           const accentColor = posPrincipal === 'portero' ? '#FFD700' :
                              posPrincipal === 'defensa' ? '#5BB8E8' :
                              posPrincipal === 'centrocampista' ? '#2ECC71' :
-                             posPrincipal === 'delantero' ? '#E74C3C' : '#5BB8E8'
+                             posPrincipal === 'delantero' ? '#FFD700' : '#5BB8E8'
 
           return (
             <div key={socio.id} style={{
@@ -157,10 +157,10 @@ export default function Socios() {
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '6px 0 0', position: 'relative', zIndex: 2 }}>
                   {socio.foto_url ? (
                     <img src={socio.foto_url} alt={socio.apodo}
-                      style={{ width: '90px', height: '90px', objectFit: 'cover', objectPosition: 'top', borderRadius: '4px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))' }} />
+                      style={{ width: '110px', height: '110px', objectFit: 'cover', objectPosition: 'top', borderRadius: '4px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))' }} />
                   ) : (
                     <div style={{
-                      width: '90px', height: '90px', borderRadius: '4px',
+                      width: '110px', height: '110px', borderRadius: '4px',
                       backgroundColor: 'rgba(255,255,255,0.15)',
                       border: '1px solid rgba(255,255,255,0.3)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
