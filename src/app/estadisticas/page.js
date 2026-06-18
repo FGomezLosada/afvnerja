@@ -48,6 +48,25 @@ export default async function Estadisticas() {
     })
   }
 
+  // Añadir socios con 0 asistencias
+  const { data: todosSocios } = await supabase
+    .from('socios')
+    .select('id, nombre_completo, apodo, posicion, posiciones')
+    .eq('activo', true)
+
+  todosSocios?.forEach(s => {
+    if (!ranking[s.id]) {
+      ranking[s.id] = {
+        nombre: s.apodo || s.nombre_completo || 'Desconocido',
+        posicion: s.posiciones?.[0] || s.posicion,
+        total: 0,
+        entrenos: 0,
+        partidos: 0,
+        penalizaciones: 0,
+      }
+    }
+  })
+
   const lista = Object.values(ranking).sort((a, b) => b.total - a.total)
   const maxTotal = lista[0]?.total || 1
 
@@ -94,7 +113,8 @@ export default async function Estadisticas() {
         {[
           { label: 'Total eventos', valor: totalEventos },
           { label: 'Entrenos', valor: totalEntrenos },
-          { label: 'Partidos/Torneos', valor: totalPartidos },
+          { label: 'Partidos', valor: eventos?.filter(e => e.tipo === 'partido').length || 0 },
+      { label: 'Torneos', valor: eventos?.filter(e => e.tipo === 'torneo').length || 0 },
           { label: 'Socios', valor: lista.length },
         ].map(s => (
           <div key={s.label} style={{
