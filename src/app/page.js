@@ -3,7 +3,6 @@ import { supabase } from '@/lib/supabase'
 export const revalidate = 0
 
 export default async function Home() {
-  // Obtener próximos eventos
   const { data: eventos } = await supabase
     .from('eventos')
     .select('*')
@@ -11,7 +10,6 @@ export default async function Home() {
     .order('fecha', { ascending: true })
     .limit(3)
 
-// Stats de la temporada
   const { data: temporadaActiva } = await supabase
     .from('temporadas')
     .select('id')
@@ -32,23 +30,14 @@ export default async function Home() {
     supabase.from('eventos').select('recaudacion_benefica').eq('temporada_id', tempId).eq('es_benefico', true),
   ])
 
-  const entronosFinalizados = eventosTemporada?.filter(e =>
-    e.tipo === 'entreno'
-  ).length || 0
-
+  const entronosFinalizados = eventosTemporada?.filter(e => e.tipo === 'entreno').length || 0
   const partidosTemp = eventosTemporada?.filter(e => e.tipo === 'partido').length || 0
   const torneosTemp = eventosTemporada?.filter(e => e.tipo === 'torneo').length || 0
-
   const eventoIdsTemp = eventosTemporada?.map(e => e.id) || []
   const asistenciasTemp = asistenciasTemporada?.filter(a => eventoIdsTemp.includes(a.evento_id)).length || 0
-
   const entrenoIds = eventosTemporada?.filter(e => e.tipo === 'entreno').map(e => e.id) || []
   const asistenciasEntrenos = asistenciasTemporada?.filter(a => entrenoIds.includes(a.evento_id)).length || 0
-
-  const mediaAsistencia = entronosFinalizados > 0
-    ? (asistenciasEntrenos / entronosFinalizados).toFixed(1)
-    : 0
-
+  const mediaAsistencia = entronosFinalizados > 0 ? (asistenciasEntrenos / entronosFinalizados).toFixed(1) : 0
   const totalBenefico = eventosBenefico?.reduce((sum, e) => sum + (e.recaudacion_benefica || 0), 0) || 0
 
   const statsTemporada = {
@@ -61,7 +50,6 @@ export default async function Home() {
     benefico: totalBenefico,
   }
 
-  // Obtener goles temporada actual y histórico
   const { data: golesData } = await supabase
     .from('goles')
     .select('cantidad, socios(apodo, nombre_completo)')
@@ -75,13 +63,11 @@ export default async function Home() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
 
-  // Obtener top 10 asistencias
   const { data: asistencias } = await supabase
     .from('asistencias')
     .select('socio_id, estado, socios(nombre_completo, apodo)')
     .in('estado', ['asistio', 'no_aparecio'])
 
-  // Calcular ranking
   const ranking = {}
   if (asistencias) {
     asistencias.forEach(a => {
@@ -126,8 +112,8 @@ export default async function Home() {
           padding: '16px 24px',
           textAlign: 'center',
           minWidth: '100px',
-alignSelf: 'flex-end',
-display: 'none',
+          alignSelf: 'flex-end',
+          display: 'none',
         }}>
           <div style={{ color: 'var(--blanco)', fontSize: '28px', fontWeight: '700' }}>2025</div>
           <div style={{ color: 'var(--azul-claro)', fontSize: '12px' }}>— 26</div>
@@ -143,6 +129,82 @@ display: 'none',
         gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
         gap: '24px',
       }}>
+
+        {/* STATS RÁPIDAS */}
+        <div style={{
+          backgroundColor: 'var(--blanco)',
+          border: '1px solid var(--azul-claro)',
+          borderRadius: '12px',
+          padding: '20px',
+        }}>
+          <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
+            📊 La temporada en números
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            {[
+              { label: 'Socios activos', valor: statsTemporada.socios },
+              { label: 'Entrenos finalizados', valor: statsTemporada.entrenos },
+              { label: 'Asistencias totales', valor: statsTemporada.asistencias },
+              { label: 'Media asistencia', valor: statsTemporada.mediaAsistencia },
+              { label: 'Partidos', valor: statsTemporada.partidos },
+              { label: 'Torneos', valor: statsTemporada.torneos },
+              { label: 'Recaudado benéfico', valor: `${statsTemporada.benefico}€` },
+            ].map(stat => (
+              <div key={stat.label} style={{
+                backgroundColor: 'var(--azul-palido)',
+                borderRadius: '8px',
+                padding: '12px',
+                textAlign: 'center',
+              }}>
+                <div style={{ fontSize: '22px', fontWeight: '700', color: 'var(--azul-marino)' }}>{stat.valor}</div>
+                <div style={{ fontSize: '11px', color: 'var(--azul-medio)', marginTop: '2px' }}>{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* PRÓXIMOS EVENTOS */}
+        <div style={{
+          backgroundColor: 'var(--blanco)',
+          border: '1px solid var(--azul-claro)',
+          borderRadius: '12px',
+          padding: '20px',
+        }}>
+          <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
+            📅 Próximos eventos
+          </h2>
+          {!eventos || eventos.length === 0 ? (
+            <p style={{ color: '#999', fontSize: '13px' }}>No hay eventos próximos</p>
+          ) : (
+            eventos.map(evento => (
+              <a key={evento.id} href={`/eventos/${evento.id}`} style={{
+                display: 'block',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                marginBottom: '8px',
+                backgroundColor: 'var(--azul-palido)',
+                borderLeft: `3px solid ${evento.tipo === 'partido' ? 'var(--naranja)' : evento.tipo === 'social' ? '#639922' : 'var(--azul-medio)'}`,
+                textDecoration: 'none',
+              }}>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--azul-marino)' }}>
+                  {evento.titulo || evento.tipo}
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--azul-medio)', marginTop: '2px' }}>
+                  {new Date(evento.fecha).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+                  {evento.hora ? ` · ${evento.hora.slice(0,5)}` : ''}
+                  {evento.lugar ? ` · ${evento.lugar}` : ''}
+                </div>
+              </a>
+            ))
+          )}
+          <a href="/calendario" style={{
+            display: 'block',
+            marginTop: '12px',
+            fontSize: '12px',
+            color: 'var(--azul-medio)',
+            textDecoration: 'none',
+          }}>Ver calendario completo →</a>
+        </div>
 
         {/* TOP 10 */}
         <div style={{
@@ -199,50 +261,7 @@ display: 'none',
           }}>Ver ranking completo →</a>
         </div>
 
-        {/* PRÓXIMOS EVENTOS */}
-        <div style={{
-          backgroundColor: 'var(--blanco)',
-          border: '1px solid var(--azul-claro)',
-          borderRadius: '12px',
-          padding: '20px',
-        }}>
-          <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
-            📅 Próximos eventos
-          </h2>
-          {!eventos || eventos.length === 0 ? (
-            <p style={{ color: '#999', fontSize: '13px' }}>No hay eventos próximos</p>
-          ) : (
-            eventos.map(evento => (
-              <a key={evento.id} href={`/eventos/${evento.id}`} style={{
-                display: 'block',
-                padding: '10px 12px',
-                borderRadius: '8px',
-                marginBottom: '8px',
-                backgroundColor: 'var(--azul-palido)',
-                borderLeft: `3px solid ${evento.tipo === 'partido' ? 'var(--naranja)' : evento.tipo === 'social' ? '#639922' : 'var(--azul-medio)'}`,
-                textDecoration: 'none',
-              }}>
-                <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--azul-marino)' }}>
-                  {evento.titulo || evento.tipo}
-                </div>
-                <div style={{ fontSize: '11px', color: 'var(--azul-medio)', marginTop: '2px' }}>
-                  {new Date(evento.fecha).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
-                  {evento.hora ? ` · ${evento.hora.slice(0,5)}` : ''}
-                  {evento.lugar ? ` · ${evento.lugar}` : ''}
-                </div>
-              </a>
-            ))
-          )}
-          <a href="/calendario" style={{
-            display: 'block',
-            marginTop: '12px',
-            fontSize: '12px',
-            color: 'var(--azul-medio)',
-            textDecoration: 'none',
-          }}>Ver calendario completo →</a>
-        </div>
-
-{/* TOP GOLEADORES */}
+        {/* TOP GOLEADORES */}
         <div style={{
           backgroundColor: 'var(--blanco)',
           border: '1px solid var(--azul-claro)',
@@ -277,39 +296,6 @@ display: 'none',
           <a href="/estadisticas" style={{ display: 'block', marginTop: '12px', fontSize: '12px', color: 'var(--azul-medio)', textDecoration: 'none' }}>
             Ver ranking completo →
           </a>
-        </div>
-
-        {/* STATS RÁPIDAS */}
-        <div style={{
-          backgroundColor: 'var(--blanco)',
-          border: '1px solid var(--azul-claro)',
-          borderRadius: '12px',
-          padding: '20px',
-        }}>
-          <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
-            📊 La temporada en números
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            {[
-              { label: 'Socios activos', valor: statsTemporada.socios },
-              { label: 'Entrenos finalizados', valor: statsTemporada.entrenos },
-              { label: 'Asistencias totales', valor: statsTemporada.asistencias },
-              { label: 'Media asistencia', valor: statsTemporada.mediaAsistencia },
-              { label: 'Partidos', valor: statsTemporada.partidos },
-              { label: 'Torneos', valor: statsTemporada.torneos },
-              { label: 'Recaudado benéfico', valor: `${statsTemporada.benefico}€` },
-            ].map(stat => (
-              <div key={stat.label} style={{
-                backgroundColor: 'var(--azul-palido)',
-                borderRadius: '8px',
-                padding: '12px',
-                textAlign: 'center',
-              }}>
-                <div style={{ fontSize: '22px', fontWeight: '700', color: 'var(--azul-marino)' }}>{stat.valor}</div>
-                <div style={{ fontSize: '11px', color: 'var(--azul-medio)', marginTop: '2px' }}>{stat.label}</div>
-              </div>
-            ))}
-          </div>
         </div>
 
       </div>
