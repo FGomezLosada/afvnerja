@@ -80,9 +80,16 @@ export default function Socios() {
       <h1 style={{ color: 'var(--azul-marino)', fontSize: '28px', fontWeight: '600', marginBottom: '8px' }}>
         Plantilla — Temporada 2025-26
       </h1>
-      <p style={{ color: 'var(--azul-medio)', fontSize: '14px', marginBottom: '24px' }}>
+      <p style={{ color: 'var(--azul-medio)', fontSize: '14px', marginBottom: '12px' }}>
         {socios.length} socios activos
       </p>
+      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '24px', padding: '10px 14px', backgroundColor: 'var(--azul-palido)', borderRadius: '8px', fontSize: '12px', color: 'var(--azul-medio)' }}>
+        <span>⭐ <strong>Nº</strong> — Valoración (50-99) basada en % de asistencia</span>
+        <span><strong>#</strong> — Posición en el ranking</span>
+        <span><strong>ASI</strong> — Asistencias totales</span>
+        <span><strong>%</strong> — % de asistencia</span>
+        <span><strong>GOL</strong> — Goles marcados</span>
+      </div>
 
       {/* Filtros */}
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '28px' }}>
@@ -157,10 +164,10 @@ export default function Socios() {
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '6px 0 0', position: 'relative', zIndex: 2 }}>
                   {socio.foto_url ? (
                     <img src={socio.foto_url} alt={socio.apodo}
-                      style={{ width: '110px', height: '110px', objectFit: 'cover', objectPosition: 'top', borderRadius: '4px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))' }} />
+                      style={{ width: '130px', height: '130px', objectFit: 'cover', objectPosition: 'top', borderRadius: '4px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))' }} />
                   ) : (
                     <div style={{
-                      width: '110px', height: '110px', borderRadius: '4px',
+                      width: '130px', height: '130px', borderRadius: '4px',
                       backgroundColor: 'rgba(255,255,255,0.15)',
                       border: '1px solid rgba(255,255,255,0.3)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
