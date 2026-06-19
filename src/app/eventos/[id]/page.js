@@ -17,10 +17,13 @@ export default function DetalleEvento() {
   const [loading, setLoading] = useState(true)
   const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState('')
-  const [equipos, setEquipos] = useState(null)
+  const [esAdmin, setEsAdmin] = useState(false)
 
   useEffect(() => {
     async function cargar() {
+      const { data: { session } } = await supabase.auth.getSession()
+      setEsAdmin(!!session)
+
       const { data: ev } = await supabase.from('eventos').select('*').eq('id', id).single()
       setEvento(ev)
 
@@ -78,55 +81,59 @@ export default function DetalleEvento() {
     setTimeout(() => setMensaje(''), 3000)
   }
 
-  function generarEquipos() {
-    const jugadores = apuntados.map(a => ({
-      id: a.id,
-      nombre: a.es_invitado ? a.nombre_invitado : (a.socios?.apodo || a.socios?.nombre_completo),
-      posicion: a.es_invitado ? null : (a.socios?.posiciones?.[0] || a.socios?.posicion || null),
-    }))
-
-    // Agrupar por posición
-    const porteros = jugadores.filter(j => j.posicion === 'portero')
-    const defensas = jugadores.filter(j => j.posicion === 'defensa')
-    const centrocampistas = jugadores.filter(j => j.posicion === 'centrocampista')
-    const delanteros = jugadores.filter(j => j.posicion === 'delantero')
-    const sinPosicion = jugadores.filter(j => !j.posicion)
-
-    // Mezclar aleatoriamente cada grupo
-    function mezclar(arr) {
-      const copia = [...arr]
-      for (let i = copia.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1))
-        ;[copia[i], copia[j]] = [copia[j], copia[i]]
-      }
-      return copia
-    }
-
-    const equipoA = []
-    const equipoB = []
-
-    // Repartir alternando cada grupo de posición para equilibrar
-    function repartir(grupo) {
-      const mezclado = mezclar(grupo)
-      mezclado.forEach((jugador, i) => {
-        if (i % 2 === 0) equipoA.push(jugador)
-        else equipoB.push(jugador)
-      })
-    }
-
-    repartir(porteros)
-    repartir(defensas)
-    repartir(centrocampistas)
-    repartir(delanteros)
-    repartir(sinPosicion)
-
-    setEquipos({ equipoA, equipoB })
-  }
-
   async function borrarseDeListaSocio(socioId) {
     if (!confirm('¿Seguro que quieres borrarte de la lista?')) return
     await supabase.from('apuntes_entreno').delete().eq('evento_id', id).eq('socio_id', socioId)
     cargarApuntados()
+  }
+
+  function mezclar(arr) {
+    const copia = [...arr]
+    for (let i = copia.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[copia[i], copia[j]] = [copia[j], copia[i]]
+    }
+    return copia
+  }
+
+  async function generarEquipos() {
+    const jugadores = mezclar(apuntados.map(a => ({
+      id: a.id,
+      nombre: a.es_invitado ? a.nombre_invitado : (a.socios?.apodo || a.socios?.nombre_completo),
+      posicion: a.es_invitado ? null : (a.socios?.posiciones?.[0] || a.socios?.posicion || null),
+    })))
+
+    const equipoA = []
+    const equipoB = []
+    let turno = 0
+
+    // Ordenar por posición para repartir uno a uno equilibrando totales
+    const orden = ['portero', 'defensa', 'centrocampista', 'delantero', null]
+    const agrupados = orden.flatMap(pos => jugadores.filter(j => j.posicion === pos))
+
+    agrupados.forEach(jugador => {
+      if (equipoA.length < equipoB.length) {
+        equipoA.push(jugador)
+      } else if (equipoB.length < equipoA.length) {
+        equipoB.push(jugador)
+      } else {
+        // empatados, alterna
+        if (turno % 2 === 0) equipoA.push(jugador)
+        else equipoB.push(jugador)
+        turno++
+      }
+    })
+
+    const nuevosEquipos = { equipoA, equipoB, generadoEn: new Date().toISOString() }
+
+    await supabase.from('eventos').update({ equipos_generados: nuevosEquipos }).eq('id', id)
+    setEvento(prev => ({ ...prev, equipos_generados: nuevosEquipos }))
+  }
+
+  async function borrarEquipos() {
+    if (!confirm('¿Borrar los equipos generados?')) return
+    await supabase.from('eventos').update({ equipos_generados: null }).eq('id', id)
+    setEvento(prev => ({ ...prev, equipos_generados: null }))
   }
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--azul-medio)' }}>Cargando evento...</div>
@@ -135,6 +142,7 @@ export default function DetalleEvento() {
   const fecha = new Date(evento.fecha + 'T12:00:00')
   const enVentana = dentroDeVentana()
   const sociosDisponibles = socios.filter(s => !apuntados.some(a => a.socio_id === s.id))
+  const equipos = evento.equipos_generados
 
   return (
     <div style={{ maxWidth: '700px', margin: '0 auto', padding: '32px 24px' }}>
@@ -159,7 +167,6 @@ export default function DetalleEvento() {
         </div>
       ) : (
         <>
-          {/* Contador */}
           <div style={{ textAlign: 'center', marginBottom: '20px' }}>
             <div style={{ fontSize: '36px', fontWeight: '700', color: 'var(--azul-marino)' }}>
               {apuntados.length} <span style={{ fontSize: '16px', color: 'var(--azul-medio)' }}>/ {evento.min_jugadores}</span>
@@ -169,7 +176,6 @@ export default function DetalleEvento() {
             </div>
           </div>
 
-          {/* Apuntarse */}
           {enVentana ? (
             <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
               <select value={socioSeleccionado} onChange={e => setSocioSeleccionado(e.target.value)}
@@ -198,7 +204,6 @@ export default function DetalleEvento() {
             </div>
           )}
 
-          {/* Lista apuntados */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {apuntados.map((a, i) => (
               <div key={a.id} style={{
@@ -230,14 +235,25 @@ export default function DetalleEvento() {
             )}
           </div>
 
-          {apuntados.length >= 2 && (
-            <button onClick={generarEquipos} style={{
-              width: '100%', marginTop: '20px', padding: '14px',
-              backgroundColor: 'var(--azul-marino)', color: 'white',
-              border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
-            }}>
-              🎲 Formar equipos aleatoriamente
-            </button>
+          {esAdmin && apuntados.length >= 2 && (
+            <div style={{ display: 'flex', gap: '8px', marginTop: '20px' }}>
+              <button onClick={generarEquipos} style={{
+                flex: 1, padding: '14px',
+                backgroundColor: 'var(--azul-marino)', color: 'white',
+                border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
+              }}>
+                🎲 {equipos ? 'Regenerar equipos' : 'Formar equipos aleatoriamente'}
+              </button>
+              {equipos && (
+                <button onClick={borrarEquipos} style={{
+                  padding: '14px 20px',
+                  backgroundColor: '#FEE2E2', color: '#C92F2F',
+                  border: '1px solid #FCA5A5', borderRadius: '10px', fontSize: '13px', cursor: 'pointer',
+                }}>
+                  Borrar
+                </button>
+              )}
+            </div>
           )}
 
           {equipos && (
