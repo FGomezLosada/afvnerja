@@ -156,7 +156,7 @@ export default function Equipaciones() {
 
                           {/* Link web */}
                           {p.web_url && (
-                            <a href={p.web_url} target="_blank" rel="noopener noreferrer" style={{
+                            <a href={p.web_url.includes('@') ? `mailto:${p.web_url}` : (p.web_url.startsWith('http') ? p.web_url : `https://${p.web_url}`)} target="_blank" rel="noopener noreferrer" style={{
                               fontSize: '11px', color: 'var(--azul-medio)',
                               textDecoration: 'none', padding: '4px 10px',
                               backgroundColor: 'white', borderRadius: '20px',

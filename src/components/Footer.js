@@ -115,7 +115,7 @@ async function PatrocinadorFooter() {
       </h3>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
         {lista.map(p => (
-          <a key={p.id} href={p.web_url || '#'} target="_blank" rel="noopener noreferrer"
+          <a key={p.id} href={p.web_url ? (p.web_url.includes('@') ? `mailto:${p.web_url}` : (p.web_url.startsWith('http') ? p.web_url : `https://${p.web_url}`)) : '#'} target="_blank" rel="noopener noreferrer"
             style={{ textDecoration: 'none' }}
             title={p.nombre}>
             {p.logo_url ? (
