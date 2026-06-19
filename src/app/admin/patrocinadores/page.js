@@ -22,7 +22,7 @@ export default function AdminPatrocinadores() {
     web_url: '',
     tipo: 'equipacion',
     prenda: '',
-    posicion: '',
+    posiciones: [],
     temporada_inicio: '',
     activo: true,
   }
@@ -52,7 +52,7 @@ export default function AdminPatrocinadores() {
       web_url: p.web_url || '',
       tipo: p.tipo || 'equipacion',
       prenda: p.prenda || '',
-      posicion: p.posicion || '',
+      posiciones: p.posiciones || [],
       temporada_inicio: p.temporada_inicio || '',
       activo: p.activo ?? true,
     })
@@ -70,7 +70,7 @@ export default function AdminPatrocinadores() {
       web_url: form.web_url || null,
       tipo: form.tipo,
       prenda: form.prenda || null,
-      posicion: form.posicion || null,
+      posiciones: form.posiciones,
       temporada_inicio: form.temporada_inicio || null,
       activo: form.activo,
     }
@@ -173,19 +173,41 @@ export default function AdminPatrocinadores() {
                     style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--azul-claro)', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }} />
                 </div>
               ))}
-              {[
-                { label: 'Prenda', key: 'prenda', opciones: prendaOpciones },
-                { label: 'Posición en prenda', key: 'posicion', opciones: posicionOpciones },
-              ].map(f => (
-                <div key={f.key} style={{ marginBottom: '14px' }}>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: 'var(--azul-marino)', marginBottom: '4px' }}>{f.label}</label>
-                  <select value={form[f.key]} onChange={e => setForm({ ...form, [f.key]: e.target.value })}
-                    style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--azul-claro)', borderRadius: '6px', fontSize: '13px' }}>
-                    <option value="">— Sin especificar —</option>
-                    {f.opciones.map(o => <option key={o} value={o}>{o}</option>)}
-                  </select>
-                </div>
-              ))}
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: 'var(--azul-marino)', marginBottom: '4px' }}>Prenda</label>
+                <select value={form.prenda} onChange={e => setForm({ ...form, prenda: e.target.value })}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--azul-claro)', borderRadius: '6px', fontSize: '13px' }}>
+                  <option value="">— Sin especificar —</option>
+                  {prendaOpciones.map(o => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: 'var(--azul-marino)', marginBottom: '8px' }}>
+                Posiciones en la prenda (puede aparecer en varias)
+              </label>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {posicionOpciones.map(p => {
+                  const seleccionada = form.posiciones.includes(p)
+                  return (
+                    <button key={p} type="button" onClick={() => {
+                      const nuevas = seleccionada
+                        ? form.posiciones.filter(x => x !== p)
+                        : [...form.posiciones, p]
+                      setForm({ ...form, posiciones: nuevas })
+                    }} style={{
+                      padding: '7px 14px', fontSize: '13px', borderRadius: '8px', cursor: 'pointer',
+                      backgroundColor: seleccionada ? 'var(--azul-marino)' : 'var(--azul-palido)',
+                      color: seleccionada ? 'white' : 'var(--azul-medio)',
+                      border: `1px solid ${seleccionada ? 'var(--azul-marino)' : 'var(--azul-claro)'}`,
+                      fontWeight: seleccionada ? '600' : '400',
+                    }}>
+                      {p}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', marginBottom: '20px', cursor: 'pointer' }}>
               <input type="checkbox" checked={form.activo} onChange={e => setForm({ ...form, activo: e.target.checked })} />
@@ -232,7 +254,7 @@ export default function AdminPatrocinadores() {
               <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--azul-marino)' }}>{p.nombre}</div>
               <div style={{ fontSize: '11px', color: 'var(--azul-medio)', marginTop: '2px' }}>
                 {p.prenda ? `${p.prenda}` : ''}
-                {p.posicion ? ` · ${p.posicion}` : ''}
+                {p.posiciones?.length > 0 ? ` · ${p.posiciones.join(', ')}` : ''}
                 {p.temporada_inicio ? ` · Desde ${p.temporada_inicio}` : ''}
               </div>
               {p.web_url && (
