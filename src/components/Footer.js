@@ -120,7 +120,7 @@ async function PatrocinadorFooter() {
             title={p.nombre}>
             {p.logo_url ? (
               <img src={p.logo_url} alt={p.nombre}
-                style={{ height: '40px', width: 'auto', maxWidth: '100px', objectFit: 'contain', filter: 'brightness(0) invert(1) opacity(0.7)' }} />
+                style={{ height: '36px', width: 'auto', maxWidth: '90px', objectFit: 'contain', backgroundColor: 'white', borderRadius: '4px', padding: '4px' }} />
             ) : (
               <div style={{
                 padding: '6px 12px', backgroundColor: 'rgba(255,255,255,0.1)',

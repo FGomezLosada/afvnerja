@@ -163,7 +163,7 @@ export default function AdminPatrocinadores() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0 16px' }}>
               {[
                 { label: 'Nombre *', key: 'nombre', type: 'text' },
-                { label: 'Web (opcional)', key: 'web_url', type: 'url' },
+                { label: 'Web, email o red social (opcional)', key: 'web_url', type: 'text' },
                 { label: 'Desde temporada (ej: 2023-24)', key: 'temporada_inicio', type: 'text' },
               ].map(f => (
                 <div key={f.key} style={{ marginBottom: '14px' }}>
