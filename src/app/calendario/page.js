@@ -120,6 +120,7 @@ export default function Calendario() {
                 borderLeft: `4px solid ${cfg.color}`,
                 borderRadius: '8px',
                 opacity: evento.estado === 'cancelado' ? 0.5 : 1,
+                flexWrap: 'wrap',
               }}>
                 <div style={{ fontSize: '24px', minWidth: '36px', textAlign: 'center', marginTop: '2px' }}>
                   {cfg.icono}
