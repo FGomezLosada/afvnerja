@@ -142,9 +142,9 @@ export default function Equipaciones() {
                             <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--azul-marino)' }}>
                               {p.nombre}
                             </div>
-                            {p.posicion && (
+                            {p.posiciones?.length > 0 && (
                               <div style={{ fontSize: '11px', color: 'var(--azul-medio)', marginTop: '2px' }}>
-                                📍 {p.posicion}
+                                📍 {p.posiciones.join(', ')}
                               </div>
                             )}
                             {p.temporada_inicio && (
