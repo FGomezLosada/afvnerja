@@ -126,7 +126,7 @@ export default function Calendario() {
                   {cfg.icono}
                 </div>
 
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minWidth: '200px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
                     <span style={{ fontSize: '14px', fontWeight: '600', color: 'var(--azul-marino)', textTransform: 'capitalize' }}>
                       {fechaStr}
