@@ -1,0 +1,271 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+
+const posicionIcon = {
+  portero: '🧤', defensa: '🛡️', centrocampista: '⚙️', delantero: '⚡'
+}
+
+export default function DetalleEvento() {
+  const { id } = useParams()
+  const [evento, setEvento] = useState(null)
+  const [socios, setSocios] = useState([])
+  const [apuntados, setApuntados] = useState([])
+  const [socioSeleccionado, setSocioSeleccionado] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [guardando, setGuardando] = useState(false)
+  const [mensaje, setMensaje] = useState('')
+  const [equipos, setEquipos] = useState(null)
+
+  useEffect(() => {
+    async function cargar() {
+      const { data: ev } = await supabase.from('eventos').select('*').eq('id', id).single()
+      setEvento(ev)
+
+      const { data: soc } = await supabase.from('socios').select('*').eq('activo', true).order('apodo')
+      setSocios(soc || [])
+
+      await cargarApuntados()
+      setLoading(false)
+    }
+    if (id) cargar()
+  }, [id])
+
+  async function cargarApuntados() {
+    const { data } = await supabase
+      .from('apuntes_entreno')
+      .select('*, socios(apodo, nombre_completo, posicion, posiciones)')
+      .eq('evento_id', id)
+      .order('created_at')
+    setApuntados(data || [])
+  }
+
+  function dentroDeVentana() {
+    if (!evento) return false
+    const ahora = new Date()
+    const fechaEntreno = new Date(`${evento.fecha}T${evento.hora || '20:45'}`)
+    const aperturaApunte = new Date(fechaEntreno.getTime() - 24 * 60 * 60 * 1000)
+    const cierreApunte = new Date(fechaEntreno.getTime() - 60 * 60 * 1000)
+    return ahora >= aperturaApunte && ahora <= cierreApunte
+  }
+
+  async function apuntarse() {
+    if (!socioSeleccionado) return
+    setGuardando(true)
+
+    const yaApuntado = apuntados.some(a => a.socio_id === socioSeleccionado)
+    if (yaApuntado) {
+      setMensaje('Ya estás apuntado en esta lista')
+      setGuardando(false)
+      return
+    }
+
+    const { error } = await supabase.from('apuntes_entreno').insert({
+      evento_id: id,
+      socio_id: socioSeleccionado,
+    })
+
+    if (error) {
+      setMensaje('Error: ' + error.message)
+    } else {
+      setMensaje('✅ Te has apuntado correctamente')
+      setSocioSeleccionado('')
+      cargarApuntados()
+    }
+    setGuardando(false)
+    setTimeout(() => setMensaje(''), 3000)
+  }
+
+  function generarEquipos() {
+    const jugadores = apuntados.map(a => ({
+      id: a.id,
+      nombre: a.es_invitado ? a.nombre_invitado : (a.socios?.apodo || a.socios?.nombre_completo),
+      posicion: a.es_invitado ? null : (a.socios?.posiciones?.[0] || a.socios?.posicion || null),
+    }))
+
+    // Agrupar por posición
+    const porteros = jugadores.filter(j => j.posicion === 'portero')
+    const defensas = jugadores.filter(j => j.posicion === 'defensa')
+    const centrocampistas = jugadores.filter(j => j.posicion === 'centrocampista')
+    const delanteros = jugadores.filter(j => j.posicion === 'delantero')
+    const sinPosicion = jugadores.filter(j => !j.posicion)
+
+    // Mezclar aleatoriamente cada grupo
+    function mezclar(arr) {
+      const copia = [...arr]
+      for (let i = copia.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[copia[i], copia[j]] = [copia[j], copia[i]]
+      }
+      return copia
+    }
+
+    const equipoA = []
+    const equipoB = []
+
+    // Repartir alternando cada grupo de posición para equilibrar
+    function repartir(grupo) {
+      const mezclado = mezclar(grupo)
+      mezclado.forEach((jugador, i) => {
+        if (i % 2 === 0) equipoA.push(jugador)
+        else equipoB.push(jugador)
+      })
+    }
+
+    repartir(porteros)
+    repartir(defensas)
+    repartir(centrocampistas)
+    repartir(delanteros)
+    repartir(sinPosicion)
+
+    setEquipos({ equipoA, equipoB })
+  }
+
+  async function borrarseDeListaSocio(socioId) {
+    if (!confirm('¿Seguro que quieres borrarte de la lista?')) return
+    await supabase.from('apuntes_entreno').delete().eq('evento_id', id).eq('socio_id', socioId)
+    cargarApuntados()
+  }
+
+  if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--azul-medio)' }}>Cargando evento...</div>
+  if (!evento) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--azul-medio)' }}>Evento no encontrado</div>
+
+  const fecha = new Date(evento.fecha + 'T12:00:00')
+  const enVentana = dentroDeVentana()
+  const sociosDisponibles = socios.filter(s => !apuntados.some(a => a.socio_id === s.id))
+
+  return (
+    <div style={{ maxWidth: '700px', margin: '0 auto', padding: '32px 24px' }}>
+      <a href="/calendario" style={{ color: 'var(--azul-medio)', fontSize: '13px', textDecoration: 'none' }}>← Calendario</a>
+
+      <div style={{ backgroundColor: 'var(--azul-marino)', borderRadius: '16px', padding: '24px', marginTop: '12px', marginBottom: '24px' }}>
+        <div style={{ color: 'var(--azul-claro)', fontSize: '13px', marginBottom: '6px' }}>
+          {fecha.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+          {evento.hora ? ` · ${evento.hora.slice(0,5)}` : ''}
+        </div>
+        <h1 style={{ color: 'white', fontSize: '22px', fontWeight: '600', marginBottom: '6px' }}>
+          {evento.titulo || 'Entreno'}
+        </h1>
+        {evento.lugar && (
+          <div style={{ color: 'var(--azul-claro)', fontSize: '13px' }}>📍 {evento.lugar}</div>
+        )}
+      </div>
+
+      {!evento.lista_entreno_activa ? (
+        <div style={{ textAlign: 'center', padding: '40px 20px', backgroundColor: 'var(--azul-palido)', borderRadius: '12px', color: 'var(--azul-medio)' }}>
+          📋 Lista gestionada por WhatsApp
+        </div>
+      ) : (
+        <>
+          {/* Contador */}
+          <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+            <div style={{ fontSize: '36px', fontWeight: '700', color: 'var(--azul-marino)' }}>
+              {apuntados.length} <span style={{ fontSize: '16px', color: 'var(--azul-medio)' }}>/ {evento.min_jugadores}</span>
+            </div>
+            <div style={{ fontSize: '13px', color: 'var(--azul-medio)' }}>
+              jugadores apuntados {apuntados.length >= evento.min_jugadores ? '— ✅ Entreno confirmado' : `— faltan ${evento.min_jugadores - apuntados.length} para confirmar`}
+            </div>
+          </div>
+
+          {/* Apuntarse */}
+          {enVentana ? (
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
+              <select value={socioSeleccionado} onChange={e => setSocioSeleccionado(e.target.value)}
+                style={{ flex: 1, minWidth: '200px', padding: '10px 14px', border: '1px solid var(--azul-claro)', borderRadius: '8px', fontSize: '14px' }}>
+                <option value="">— Selecciona tu nombre —</option>
+                {sociosDisponibles.map(s => (
+                  <option key={s.id} value={s.id}>{s.apodo || s.nombre_completo}</option>
+                ))}
+              </select>
+              <button onClick={apuntarse} disabled={guardando || !socioSeleccionado} style={{
+                padding: '10px 24px', backgroundColor: 'var(--azul-marino)', color: 'white',
+                border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer',
+              }}>
+                {guardando ? '...' : 'Apuntarme'}
+              </button>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#FEF9C3', borderRadius: '8px', color: '#854D0E', fontSize: '13px', marginBottom: '24px' }}>
+              ⏰ La ventana de apunte está cerrada (se abre 24h antes y cierra 1h antes del entreno)
+            </div>
+          )}
+
+          {mensaje && (
+            <div style={{ padding: '10px 16px', backgroundColor: '#E6F1FB', color: 'var(--azul-marino)', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', textAlign: 'center' }}>
+              {mensaje}
+            </div>
+          )}
+
+          {/* Lista apuntados */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {apuntados.map((a, i) => (
+              <div key={a.id} style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                backgroundColor: 'var(--blanco)', border: '1px solid var(--azul-claro)',
+                borderRadius: '8px', padding: '10px 14px',
+              }}>
+                <span style={{ fontSize: '12px', color: 'var(--azul-medio)', minWidth: '20px' }}>{i + 1}</span>
+                <span style={{ fontSize: '16px' }}>
+                  {a.es_invitado ? '👤' : posicionIcon[a.socios?.posiciones?.[0] || a.socios?.posicion] || '⚽'}
+                </span>
+                <span style={{ flex: 1, fontSize: '13px', color: 'var(--azul-marino)', fontWeight: '500' }}>
+                  {a.es_invitado ? a.nombre_invitado : (a.socios?.apodo || a.socios?.nombre_completo)}
+                </span>
+                {!a.es_invitado && (
+                  <button onClick={() => borrarseDeListaSocio(a.socio_id)} style={{
+                    fontSize: '11px', color: '#C92F2F', backgroundColor: 'transparent',
+                    border: 'none', cursor: 'pointer', textDecoration: 'underline',
+                  }}>
+                    Borrarme
+                  </button>
+                )}
+              </div>
+            ))}
+            {apuntados.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '20px', color: 'var(--azul-medio)', fontSize: '13px' }}>
+                Aún no hay nadie apuntado
+              </div>
+            )}
+          </div>
+
+          {apuntados.length >= 2 && (
+            <button onClick={generarEquipos} style={{
+              width: '100%', marginTop: '20px', padding: '14px',
+              backgroundColor: 'var(--azul-marino)', color: 'white',
+              border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
+            }}>
+              🎲 Formar equipos aleatoriamente
+            </button>
+          )}
+
+          {equipos && (
+            <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ backgroundColor: '#E6F1FB', borderRadius: '12px', padding: '14px' }}>
+                <div style={{ textAlign: 'center', fontSize: '13px', fontWeight: '700', color: '#185FA5', marginBottom: '10px' }}>
+                  🔵 Equipo A ({equipos.equipoA.length})
+                </div>
+                {equipos.equipoA.map((j, i) => (
+                  <div key={i} style={{ fontSize: '12px', color: '#185FA5', padding: '4px 0', borderBottom: i < equipos.equipoA.length - 1 ? '1px solid rgba(24,95,165,0.15)' : 'none' }}>
+                    {posicionIcon[j.posicion] || '⚽'} {j.nombre}
+                  </div>
+                ))}
+              </div>
+              <div style={{ backgroundColor: '#FEF2E8', borderRadius: '12px', padding: '14px' }}>
+                <div style={{ textAlign: 'center', fontSize: '13px', fontWeight: '700', color: '#993C1D', marginBottom: '10px' }}>
+                  🟠 Equipo B ({equipos.equipoB.length})
+                </div>
+                {equipos.equipoB.map((j, i) => (
+                  <div key={i} style={{ fontSize: '12px', color: '#993C1D', padding: '4px 0', borderBottom: i < equipos.equipoB.length - 1 ? '1px solid rgba(153,60,29,0.15)' : 'none' }}>
+                    {posicionIcon[j.posicion] || '⚽'} {j.nombre}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}

@@ -109,7 +109,7 @@ export default function Calendario() {
             const fechaStr = fecha.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })
 
             return (
-              <div key={evento.id} style={{
+              <a key={evento.id} href={`/eventos/${evento.id}`} style={{
                 display: 'flex',
                 gap: '16px',
                 alignItems: 'flex-start',
@@ -121,6 +121,7 @@ export default function Calendario() {
                 borderRadius: '8px',
                 opacity: evento.estado === 'cancelado' ? 0.5 : 1,
                 flexWrap: 'wrap',
+                textDecoration: 'none',
               }}>
                 <div style={{ fontSize: '24px', minWidth: '36px', textAlign: 'center', marginTop: '2px' }}>
                   {cfg.icono}
@@ -186,7 +187,7 @@ export default function Calendario() {
                     )}
                   </div>
                 )}
-              </div>
+              </a>
             )
           })}
         </div>
