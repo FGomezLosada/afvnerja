@@ -75,7 +75,9 @@ export default function Historico() {
         {temporadas.map(temp => {
           const stats = statsPorTemporada[temp.id] || {}
           return (
-            <div key={temp.id} style={{
+            <a key={temp.id} href={`/historico/${temp.id}`} style={{
+              display: 'block',
+              textDecoration: 'none',
               backgroundColor: 'var(--blanco)',
               border: `2px solid ${temp.activa ? 'var(--azul-medio)' : 'var(--azul-claro)'}`,
               borderRadius: '16px',
@@ -175,7 +177,7 @@ export default function Historico() {
                   </div>
                 )}
               </div>
-            </div>
+            </a>
           )
         })}
       </div>
