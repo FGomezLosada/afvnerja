@@ -57,6 +57,14 @@ export default function DetalleEvento() {
     return ahora >= aperturaApunte && ahora <= cierreApunte
   }
 
+  function ventanaYaCerro() {
+    if (!evento) return false
+    const ahora = new Date()
+    const fechaEntreno = new Date(`${evento.fecha}T${evento.hora || '20:45'}`)
+    const cierreApunte = new Date(fechaEntreno.getTime() - 60 * 60 * 1000)
+    return ahora > cierreApunte
+  }
+
   async function apuntarse() {
     if (!socioSeleccionado) return
     setGuardando(true)
@@ -176,6 +184,7 @@ export default function DetalleEvento() {
 
   const fecha = new Date(evento.fecha + 'T12:00:00')
   const enVentana = dentroDeVentana()
+  const ventanaCerrada = ventanaYaCerro()
   const sociosDisponibles = socios.filter(s => !apuntados.some(a => a.socio_id === s.id))
   const equipos = evento.equipos_generados
 
@@ -209,6 +218,11 @@ export default function DetalleEvento() {
             <div style={{ fontSize: '13px', color: 'var(--azul-medio)' }}>
               jugadores apuntados {apuntados.length >= evento.min_jugadores ? '— ✅ Entreno confirmado' : `— faltan ${evento.min_jugadores - apuntados.length} para confirmar`}
             </div>
+            {ventanaCerrada && apuntados.length < evento.min_jugadores && (
+              <div style={{ marginTop: '10px', padding: '10px 16px', backgroundColor: '#FEE2E2', color: '#C92F2F', borderRadius: '8px', fontSize: '13px', fontWeight: '600' }}>
+                ❌ Entreno anulado — no se alcanzó el mínimo de jugadores
+              </div>
+            )}
           </div>
 
           {enVentana ? (
