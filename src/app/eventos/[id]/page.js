@@ -300,6 +300,12 @@ export default function DetalleEvento() {
             )}
           </div>
 
+          {esAdmin && apuntados.length > 0 && apuntados.length < 2 && (
+            <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#FEF9C3', borderRadius: '8px', color: '#854D0E', fontSize: '13px', marginTop: '16px' }}>
+              ⚠️ Se necesitan al menos 2 jugadores apuntados para formar equipos
+            </div>
+          )}
+
           {esAdmin && apuntados.length >= 2 && (
             <div style={{ display: 'flex', gap: '8px', marginTop: '20px' }}>
               <button onClick={generarEquipos} style={{
