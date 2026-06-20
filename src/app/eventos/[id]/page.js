@@ -18,6 +18,8 @@ export default function DetalleEvento() {
   const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState('')
   const [esAdmin, setEsAdmin] = useState(false)
+  const [nombreInvitado, setNombreInvitado] = useState('')
+  const [posicionInvitado, setPosicionInvitado] = useState('')
 
   useEffect(() => {
     async function cargar() {
@@ -81,6 +83,33 @@ export default function DetalleEvento() {
     setTimeout(() => setMensaje(''), 3000)
   }
 
+  
+  async function añadirInvitado() {
+    if (!nombreInvitado.trim()) return
+
+    const numeroInvitado = apuntados.filter(a => a.es_invitado).length + 1
+    const etiqueta = `Invitado ${numeroInvitado} (${nombreInvitado.trim()})`
+
+    const { error } = await supabase.from('apuntes_entreno').insert({
+      evento_id: id,
+      es_invitado: true,
+      nombre_invitado: etiqueta,
+      posicion_invitado: posicionInvitado || null,
+    })
+
+    if (!error) {
+      setNombreInvitado('')
+      setPosicionInvitado('')
+      cargarApuntados()
+    }
+  }
+
+  async function eliminarInvitado(apunteId) {
+    if (!confirm('¿Eliminar a este invitado?')) return
+    await supabase.from('apuntes_entreno').delete().eq('id', apunteId)
+    cargarApuntados()
+  }
+
   async function borrarseDeListaSocio(socioId) {
     if (!confirm('¿Seguro que quieres borrarte de la lista?')) return
     await supabase.from('apuntes_entreno').delete().eq('evento_id', id).eq('socio_id', socioId)
@@ -100,7 +129,7 @@ export default function DetalleEvento() {
     const jugadores = mezclar(apuntados.map(a => ({
       id: a.id,
       nombre: a.es_invitado ? a.nombre_invitado : (a.socios?.apodo || a.socios?.nombre_completo),
-      posicion: a.es_invitado ? null : (a.socios?.posiciones?.[0] || a.socios?.posicion || null),
+      posicion: a.es_invitado ? (a.posicion_invitado || null) : (a.socios?.posiciones?.[0] || a.socios?.posicion || null),
     })))
 
     const equipoA = []
@@ -226,8 +255,38 @@ export default function DetalleEvento() {
                     Borrarme
                   </button>
                 )}
+                {a.es_invitado && esAdmin && (
+                  <button onClick={() => eliminarInvitado(a.id)} style={{
+                    fontSize: '11px', color: '#C92F2F', backgroundColor: 'transparent',
+                    border: 'none', cursor: 'pointer', textDecoration: 'underline',
+                  }}>
+                    Eliminar
+                  </button>
+                )}
               </div>
             ))}
+
+            {esAdmin && (
+              <div style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap', padding: '12px', backgroundColor: 'var(--azul-palido)', borderRadius: '8px' }}>
+                <input type="text" placeholder="Nombre del invitado" value={nombreInvitado}
+                  onChange={e => setNombreInvitado(e.target.value)}
+                  style={{ flex: 1, minWidth: '150px', padding: '8px 12px', border: '1px solid var(--azul-claro)', borderRadius: '6px', fontSize: '13px' }} />
+                <select value={posicionInvitado} onChange={e => setPosicionInvitado(e.target.value)}
+                  style={{ padding: '8px 12px', border: '1px solid var(--azul-claro)', borderRadius: '6px', fontSize: '13px' }}>
+                  <option value="">Sin posición</option>
+                  <option value="portero">🧤 Portero</option>
+                  <option value="defensa">🛡️ Defensa</option>
+                  <option value="centrocampista">⚙️ Centrocampista</option>
+                  <option value="delantero">⚡ Delantero</option>
+                </select>
+                <button onClick={añadirInvitado} style={{
+                  padding: '8px 16px', backgroundColor: 'var(--azul-marino)', color: 'white',
+                  border: 'none', borderRadius: '6px', fontSize: '13px', cursor: 'pointer',
+                }}>
+                  + Invitado
+                </button>
+              </div>
+            )}
             {apuntados.length === 0 && (
               <div style={{ textAlign: 'center', padding: '20px', color: 'var(--azul-medio)', fontSize: '13px' }}>
                 Aún no hay nadie apuntado
