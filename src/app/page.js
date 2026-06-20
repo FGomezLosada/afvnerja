@@ -106,18 +106,7 @@ export default async function Home() {
             Pasión, compromiso y comunidad · Axarquía - Costa del Sol
           </p>
         </div>
-        <div style={{
-          backgroundColor: 'rgba(255,255,255,0.1)',
-          borderRadius: '12px',
-          padding: '16px 24px',
-          textAlign: 'center',
-          minWidth: '100px',
-          alignSelf: 'flex-end',
-          display: 'none',
-        }}>
-          <div style={{ color: 'var(--blanco)', fontSize: '28px', fontWeight: '700' }}>2025</div>
-          <div style={{ color: 'var(--azul-claro)', fontSize: '12px' }}>— 26</div>
-        </div>
+         
       </div>
 
       {/* CONTENIDO PRINCIPAL */}
