@@ -143,9 +143,14 @@ export default function Calendario() {
                     }}>
                       {cfg.label}
                     </span>
-                    {evento.es_benefico && (
+                     {evento.es_benefico && (
                       <span style={{ fontSize: '10px', fontWeight: '600', padding: '2px 8px', borderRadius: '10px', backgroundColor: '#C92F2F', color: 'white' }}>
                         ❤️ Benéfico
+                      </span>
+                    )}
+                    {evento.lista_entreno_activa && (
+                      <span style={{ fontSize: '10px', fontWeight: '600', padding: '2px 8px', borderRadius: '10px', backgroundColor: '#1D9E75', color: 'white' }}>
+                        📋 Lista activa
                       </span>
                     )}
                     {evento.estado === 'cancelado' && (
