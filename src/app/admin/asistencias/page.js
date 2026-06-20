@@ -43,6 +43,25 @@ export default function AdminAsistencias() {
     data?.forEach(a => {
       mapa[a.socio_id] = a.estado
     })
+
+    // Si no hay asistencias registradas todavía, precargar desde la lista de apunte
+    if (Object.keys(mapa).length === 0) {
+      const { data: apuntes } = await supabase
+        .from('apuntes_entreno')
+        .select('socio_id, es_invitado, estado')
+        .eq('evento_id', evento.id)
+
+      apuntes?.forEach(a => {
+        if (!a.es_invitado && a.socio_id) {
+          mapa[a.socio_id] = a.estado === 'borrado' ? 'se_borro' : 'asistio'
+        }
+      })
+
+      if (apuntes && apuntes.length > 0) {
+        setMensaje('📋 Lista precargada desde el apunte digital. Corrige las excepciones si es necesario.')
+      }
+    }
+
     setAsistencias(mapa)
   }
 

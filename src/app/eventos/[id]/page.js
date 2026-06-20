@@ -43,6 +43,7 @@ export default function DetalleEvento() {
       .from('apuntes_entreno')
       .select('*, socios(apodo, nombre_completo, posicion, posiciones)')
       .eq('evento_id', id)
+      .eq('estado', 'apuntado')
       .order('created_at')
     setApuntados(data || [])
   }
@@ -106,13 +107,18 @@ export default function DetalleEvento() {
 
   async function eliminarInvitado(apunteId) {
     if (!confirm('¿Eliminar a este invitado?')) return
-    await supabase.from('apuntes_entreno').delete().eq('id', apunteId)
+    await supabase.from('apuntes_entreno')
+      .update({ estado: 'borrado', fecha_borrado: new Date().toISOString() })
+      .eq('id', apunteId)
     cargarApuntados()
   }
 
   async function borrarseDeListaSocio(socioId) {
     if (!confirm('¿Seguro que quieres borrarte de la lista?')) return
-    await supabase.from('apuntes_entreno').delete().eq('evento_id', id).eq('socio_id', socioId)
+    await supabase.from('apuntes_entreno')
+      .update({ estado: 'borrado', fecha_borrado: new Date().toISOString() })
+      .eq('evento_id', id)
+      .eq('socio_id', socioId)
     cargarApuntados()
   }
 
