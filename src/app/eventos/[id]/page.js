@@ -52,7 +52,7 @@ export default function DetalleEvento() {
     if (!evento) return false
     const ahora = new Date()
     const fechaEntreno = new Date(`${evento.fecha}T${evento.hora || '20:45'}`)
-    const aperturaApunte = new Date(fechaEntreno.getTime() - 24 * 60 * 60 * 1000)
+    const aperturaApunte = new Date(fechaEntreno.getTime() - 36 * 60 * 60 * 1000)
     const cierreApunte = new Date(fechaEntreno.getTime() - 60 * 60 * 1000)
     return ahora >= aperturaApunte && ahora <= cierreApunte
   }
@@ -243,7 +243,7 @@ export default function DetalleEvento() {
             </div>
           ) : (
             <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#FEF9C3', borderRadius: '8px', color: '#854D0E', fontSize: '13px', marginBottom: '24px' }}>
-              ⏰ La ventana de apunte está cerrada (se abre 24h antes y cierra 1h antes del entreno)
+              ⏰ La ventana de apunte está cerrada (se abre 36h antes y cierra 1h antes del entreno)
             </div>
           )}
 

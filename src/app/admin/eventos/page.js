@@ -154,8 +154,19 @@ export default function AdminEventos() {
   }
 
   async function eliminarEvento(id) {
-    if (!confirm('¿Seguro que quieres eliminar este evento?')) return
-    await supabase.from('eventos').delete().eq('id', id)
+    if (!confirm('¿Seguro que quieres eliminar este evento? Se borrarán también sus asistencias, goles y apuntes asociados.')) return
+    
+    await Promise.all([
+      supabase.from('apuntes_entreno').delete().eq('evento_id', id),
+      supabase.from('asistencias').delete().eq('evento_id', id),
+      supabase.from('goles').delete().eq('evento_id', id),
+      supabase.from('fotos_eventos').delete().eq('evento_id', id),
+    ])
+
+    const { error } = await supabase.from('eventos').delete().eq('id', id)
+    if (error) {
+      alert('Error al eliminar: ' + error.message)
+    }
     cargarEventos()
   }
 
