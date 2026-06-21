@@ -25,14 +25,16 @@ export default async function Home() {
     { data: eventosBenefico },
   ] = await Promise.all([
     supabase.from('socios').select('*', { count: 'exact', head: true }).eq('activo', true),
-    supabase.from('eventos').select('id, tipo, estado').eq('temporada_id', tempId),
+    supabase.from('eventos').select('id, tipo, estado, fecha').eq('temporada_id', tempId),
     supabase.from('asistencias').select('id, evento_id, estado').eq('estado', 'asistio'),
     supabase.from('eventos').select('recaudacion_benefica').eq('temporada_id', tempId).eq('es_benefico', true),
   ])
 
-  const entronosFinalizados = eventosTemporada?.filter(e => e.tipo === 'entreno').length || 0
-  const partidosTemp = eventosTemporada?.filter(e => e.tipo === 'partido').length || 0
-  const torneosTemp = eventosTemporada?.filter(e => e.tipo === 'torneo').length || 0
+  const entronosFinalizados = eventosTemporada?.filter(e => e.tipo === 'entreno' && e.estado !== 'cancelado').length || 0
+  const entrenosAnulados = eventosTemporada?.filter(e => e.tipo === 'entreno' && e.estado === 'cancelado').length || 0
+  const hoy = new Date().toISOString().split('T')[0]
+  const partidosTemp = eventosTemporada?.filter(e => e.tipo === 'partido' && e.estado !== 'cancelado' && (e.estado === 'jugado' || e.fecha < hoy)).length || 0
+  const torneosTemp = eventosTemporada?.filter(e => e.tipo === 'torneo' && e.estado !== 'cancelado' && (e.estado === 'jugado' || e.fecha < hoy)).length || 0
   const eventoIdsTemp = eventosTemporada?.map(e => e.id) || []
   const asistenciasTemp = asistenciasTemporada?.filter(a => eventoIdsTemp.includes(a.evento_id)).length || 0
   const entrenoIds = eventosTemporada?.filter(e => e.tipo === 'entreno').map(e => e.id) || []
@@ -43,6 +45,7 @@ export default async function Home() {
   const statsTemporada = {
     socios: sociosActivos || 0,
     entrenos: entronosFinalizados,
+    entrenosAnulados,
     asistencias: asistenciasTemp,
     partidos: partidosTemp,
     torneos: torneosTemp,
@@ -133,6 +136,7 @@ export default async function Home() {
             {[
               { label: 'Socios activos', valor: statsTemporada.socios },
               { label: 'Entrenos finalizados', valor: statsTemporada.entrenos },
+              { label: 'Entrenos anulados', valor: statsTemporada.entrenosAnulados },
               { label: 'Asistencias totales', valor: statsTemporada.asistencias },
               { label: 'Media asistencia', valor: statsTemporada.mediaAsistencia },
               { label: 'Partidos', valor: statsTemporada.partidos },
