@@ -44,7 +44,7 @@ export default async function Estadisticas() {
       ranking[id].total += val
       if (a.estado === 'no_aparecio') ranking[id].penalizaciones++
       if (a.eventos?.tipo === 'entreno' && a.estado === 'asistio') ranking[id].entrenos++
-      if (a.eventos?.tipo === 'partido' && a.estado === 'asistio') ranking[id].partidos++
+      if ((a.eventos?.tipo === 'partido' || a.eventos?.tipo === 'torneo') && a.estado === 'asistio') ranking[id].partidos++
     })
   }
 
@@ -131,6 +131,12 @@ export default async function Estadisticas() {
         ))}
       </div>
 
+      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '24px', padding: '10px 14px', backgroundColor: 'var(--azul-palido)', borderRadius: '8px', fontSize: '12px', color: 'var(--azul-medio)' }}>
+        <span><strong>Entreno:</strong> 1 (asistió) · 0 (avisó y no fue) · -1 (no avisó, penalización)</span>
+        <span><strong>Partido:</strong> 1 asistencia</span>
+        <span><strong>Torneo:</strong> 1 asistencia (independiente del nº de partidos que tenga)</span>
+      </div>
+
       <h2 style={{ color: 'var(--azul-marino)', fontSize: '20px', fontWeight: '600', marginBottom: '16px' }}>
         🏆 Ranking de asistencias
       </h2>
@@ -153,7 +159,7 @@ export default async function Estadisticas() {
             <span>Socio</span>
             <span style={{ textAlign: 'center' }}>Total</span>
             <span style={{ textAlign: 'center' }}>Entrenos</span>
-            <span style={{ textAlign: 'center' }}>Partidos</span>
+            <span style={{ textAlign: 'center' }}>Part/Torn</span>
             <span style={{ textAlign: 'center' }}>Penalty</span>
             <span style={{ textAlign: 'center' }}>%</span>
           </div>
