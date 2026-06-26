@@ -48,6 +48,18 @@ export default function DetalleEvento() {
     setApuntados(data || [])
   }
 
+  async function notificarTelegram(mensaje) {
+    try {
+      await fetch('/api/telegram/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensaje }),
+      })
+    } catch (e) {
+      console.error('Error notificando a Telegram:', e)
+    }
+  }
+
   function dentroDeVentana() {
     if (!evento) return false
     const ahora = new Date()
@@ -84,6 +96,11 @@ export default function DetalleEvento() {
     if (error) {
       setMensaje('Error: ' + error.message)
     } else {
+      const socio = socios.find(s => s.id === socioSeleccionado)
+      const nombreSocio = socio?.apodo || socio?.nombre_completo || 'Alguien'
+      notificarTelegram(
+        `📋 ${evento.tipo?.toUpperCase()} · ${evento.titulo || evento.lugar || ''} · ${evento.fecha}\n✅ Se apuntó: ${nombreSocio}\n👥 Apuntados ahora: ${apuntados.length + 1}${evento.min_jugadores ? ` / mínimo ${evento.min_jugadores}` : ''}`
+      )
       setMensaje('✅ Te has apuntado correctamente')
       setSocioSeleccionado('')
       cargarApuntados()
@@ -118,6 +135,9 @@ export default function DetalleEvento() {
     })
 
     if (!error) {
+      notificarTelegram(
+        `📋 ${evento.tipo?.toUpperCase()} · ${evento.titulo || evento.lugar || ''} · ${evento.fecha}\n👤 Invitado añadido: ${nombreInvitado.trim()}\n👥 Apuntados ahora: ${apuntados.length + 1}${evento.min_jugadores ? ` / mínimo ${evento.min_jugadores}` : ''}`
+      )
       setNombreInvitado('')
       setPosicionInvitado('')
       cargarApuntados()
@@ -126,9 +146,14 @@ export default function DetalleEvento() {
 
   async function eliminarInvitado(apunteId) {
     if (!confirm('¿Eliminar a este invitado?')) return
+    const invitado = apuntados.find(a => a.id === apunteId)
     await supabase.from('apuntes_entreno')
       .update({ estado: 'borrado', fecha_borrado: new Date().toISOString() })
       .eq('id', apunteId)
+
+    notificarTelegram(
+      `📋 ${evento.tipo?.toUpperCase()} · ${evento.titulo || evento.lugar || ''} · ${evento.fecha}\n❌ Invitado eliminado: ${invitado?.nombre_invitado || ''}\n👥 Apuntados ahora: ${apuntados.length - 1}${evento.min_jugadores ? ` / mínimo ${evento.min_jugadores}` : ''}`
+    )
     cargarApuntados()
   }
 
@@ -138,6 +163,12 @@ export default function DetalleEvento() {
       .update({ estado: 'borrado', fecha_borrado: new Date().toISOString() })
       .eq('evento_id', id)
       .eq('socio_id', socioId)
+
+    const socio = socios.find(s => s.id === socioId)
+    const nombreSocio = socio?.apodo || socio?.nombre_completo || 'Alguien'
+    notificarTelegram(
+      `📋 ${evento.tipo?.toUpperCase()} · ${evento.titulo || evento.lugar || ''} · ${evento.fecha}\n❌ Se borró: ${nombreSocio}\n👥 Apuntados ahora: ${apuntados.length - 1}${evento.min_jugadores ? ` / mínimo ${evento.min_jugadores}` : ''}`
+    )
     cargarApuntados()
   }
 
