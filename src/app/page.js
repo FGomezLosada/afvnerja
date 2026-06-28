@@ -288,6 +288,40 @@ export default async function Home() {
           }}>Ver ranking completo →</a>
         </div>
 
+        {/* TOP RACHA */}
+        <div style={{
+          backgroundColor: 'var(--blanco)',
+          border: '1px solid var(--azul-claro)',
+          borderRadius: '12px',
+          padding: '20px',
+        }}>
+          <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
+            🔥 Top 5 Racha Asistencias Consecutivas
+          </h2>
+          {topRachas.length === 0 ? (
+            <p style={{ color: '#999', fontSize: '13px' }}>Sin rachas activas aún</p>
+          ) : (
+            topRachas.map((s, i) => (
+              <div key={s.nombre} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '6px 0',
+                borderBottom: i < topRachas.length - 1 ? '1px solid var(--azul-palido)' : 'none',
+              }}>
+                <span style={{
+                  minWidth: '20px', fontSize: '12px', fontWeight: '600',
+                  color: i === 0 ? '#B07800' : i === 1 ? '#888' : i === 2 ? '#993C1D' : 'var(--azul-medio)',
+                }}>
+                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
+                </span>
+                <span style={{ flex: 1, fontSize: '13px', color: 'var(--negro)' }}>{s.nombre}</span>
+                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--naranja)' }}>🔥 {s.racha}</span>
+              </div>
+            ))
+          )}
+        </div>
+
         {/* TOP GOLEADORES */}
         <div style={{
           backgroundColor: 'var(--blanco)',
@@ -325,41 +359,7 @@ export default async function Home() {
           </a>
         </div>
 
-        {/* TOP RACHA */}
-        <div style={{
-          backgroundColor: 'var(--blanco)',
-          border: '1px solid var(--azul-claro)',
-          borderRadius: '12px',
-          padding: '20px',
-        }}>
-          <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
-            🔥 Top 5 Racha Asistencias Consecutivas
-          </h2>
-          {topRachas.length === 0 ? (
-            <p style={{ color: '#999', fontSize: '13px' }}>Sin rachas activas aún</p>
-          ) : (
-            topRachas.map((s, i) => (
-              <div key={s.nombre} style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '6px 0',
-                borderBottom: i < topRachas.length - 1 ? '1px solid var(--azul-palido)' : 'none',
-              }}>
-                <span style={{
-                  minWidth: '20px', fontSize: '12px', fontWeight: '600',
-                  color: i === 0 ? '#B07800' : i === 1 ? '#888' : i === 2 ? '#993C1D' : 'var(--azul-medio)',
-                }}>
-                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
-                </span>
-                <span style={{ flex: 1, fontSize: '13px', color: 'var(--negro)' }}>{s.nombre}</span>
-                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--naranja)' }}>🔥 {s.racha}</span>
-              </div>
-            ))
-          )}
         </div>
-
-      </div>
     </div>
   )
 }
