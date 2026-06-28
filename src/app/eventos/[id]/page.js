@@ -88,10 +88,12 @@ export default function DetalleEvento() {
       return
     }
 
-    const { error } = await supabase.from('apuntes_entreno').insert({
+    const { error } = await supabase.from('apuntes_entreno').upsert({
       evento_id: id,
       socio_id: socioSeleccionado,
-    })
+      estado: 'apuntado',
+      fecha_borrado: null,
+    }, { onConflict: 'evento_id,socio_id' })
 
     if (error) {
       setMensaje('Error: ' + error.message)
