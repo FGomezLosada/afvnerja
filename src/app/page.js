@@ -119,6 +119,52 @@ export default async function Home() {
     .sort((a, b) => b.racha - a.racha)
     .slice(0, 5)
 
+  const { data: entrenosTemporadaGrafico } = await supabase
+    .from('eventos')
+    .select('id, fecha')
+    .eq('temporada_id', tempId)
+    .eq('tipo', 'entreno')
+    .eq('estado', 'jugado')
+    .order('fecha', { ascending: true })
+
+  const idsEntrenosGrafico = entrenosTemporadaGrafico?.map(e => e.id) || []
+
+  const { data: asistenciasGrafico } = idsEntrenosGrafico.length > 0
+    ? await supabase.from('asistencias').select('evento_id').eq('estado', 'asistio').in('evento_id', idsEntrenosGrafico)
+    : { data: [] }
+
+  const asistenciasPorEvento = {}
+  asistenciasGrafico?.forEach(a => {
+    asistenciasPorEvento[a.evento_id] = (asistenciasPorEvento[a.evento_id] || 0) + 1
+  })
+
+  const entrenosPorMes = {}
+  const asistenciasPorMes = {}
+  entrenosTemporadaGrafico?.forEach(ev => {
+    const mesKey = ev.fecha.slice(0, 7)
+    entrenosPorMes[mesKey] = (entrenosPorMes[mesKey] || 0) + 1
+    asistenciasPorMes[mesKey] = (asistenciasPorMes[mesKey] || 0) + (asistenciasPorEvento[ev.id] || 0)
+  })
+
+  const nombresMes = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+
+  const evolucionMensual = Object.keys(entrenosPorMes).sort().map(mesKey => {
+    const mesNum = parseInt(mesKey.split('-')[1])
+    const media = entrenosPorMes[mesKey] > 0 ? asistenciasPorMes[mesKey] / entrenosPorMes[mesKey] : 0
+    return { mesKey, label: nombresMes[mesNum - 1], media: Math.round(media * 10) / 10 }
+  })
+
+  const OBJETIVO_ASISTENCIA = 18
+  const padLeft = 10
+  const padTop = 30
+  const padBottom = 30
+  const barWidth = 40
+  const gap = 24
+  const chartHeight = 220
+  const maxValor = Math.ceil((Math.max(OBJETIVO_ASISTENCIA, ...evolucionMensual.map(m => m.media), 1) * 1.15) / 2) * 2
+  const chartWidth = padLeft + evolucionMensual.length * (barWidth + gap) + 10
+  const yObjetivo = chartHeight - padBottom - (OBJETIVO_ASISTENCIA / maxValor) * (chartHeight - padBottom - padTop)
+
   return (
     <div>
       {/* BANNER */}
@@ -188,6 +234,63 @@ export default async function Home() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* GRÁFICO EVOLUCIÓN MEDIA ASISTENCIA */}
+        <div style={{
+          backgroundColor: 'var(--blanco)',
+          border: '1px solid var(--azul-claro)',
+          borderRadius: '12px',
+          padding: '20px',
+          gridColumn: '1 / -1',
+        }}>
+          <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '600', marginBottom: '4px' }}>
+            📈 Evolución de la Media de Asistencia
+          </h2>
+          <p style={{ color: '#888', fontSize: '12px', marginBottom: '12px' }}>
+            Objetivo de temporada: <strong style={{ color: 'var(--naranja)' }}>{OBJETIVO_ASISTENCIA}.0</strong> asistentes de media por entreno
+          </p>
+          {evolucionMensual.length === 0 ? (
+            <p style={{ color: '#999', fontSize: '13px' }}>Aún no hay datos suficientes esta temporada</p>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} style={{ minWidth: `${chartWidth}px`, height: '240px', display: 'block' }}>
+                <defs>
+                  <linearGradient id="barNormal" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#1A6BB5" />
+                    <stop offset="100%" stopColor="#5BB8E8" />
+                  </linearGradient>
+                  <linearGradient id="barObjetivo" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#D4721A" />
+                    <stop offset="100%" stopColor="#F0A050" />
+                  </linearGradient>
+                </defs>
+
+                <line x1={padLeft} y1={yObjetivo} x2={chartWidth - 10} y2={yObjetivo} stroke="#D4721A" strokeWidth="2" strokeDasharray="6,5" />
+                <text x={chartWidth - 10} y={yObjetivo - 8} textAnchor="end" fontSize="12" fill="#D4721A" fontWeight="700">
+                  Objetivo {OBJETIVO_ASISTENCIA}.0
+                </text>
+
+                {evolucionMensual.map((m, i) => {
+                  const x = padLeft + i * (barWidth + gap)
+                  const barH = (m.media / maxValor) * (chartHeight - padBottom - padTop)
+                  const y = chartHeight - padBottom - barH
+                  const alcanzado = m.media >= OBJETIVO_ASISTENCIA
+                  return (
+                    <g key={m.mesKey}>
+                      <rect x={x} y={y} width={barWidth} height={barH} rx="6" fill={alcanzado ? 'url(#barObjetivo)' : 'url(#barNormal)'} />
+                      <text x={x + barWidth / 2} y={y - 8} textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--azul-marino)">
+                        {m.media}
+                      </text>
+                      <text x={x + barWidth / 2} y={chartHeight - padBottom + 18} textAnchor="middle" fontSize="12" fill="#888">
+                        {m.label}
+                      </text>
+                    </g>
+                  )
+                })}
+              </svg>
+            </div>
+          )}
         </div>
 
         {/* PRÓXIMOS EVENTOS */}
