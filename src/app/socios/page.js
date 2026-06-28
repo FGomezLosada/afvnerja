@@ -73,6 +73,10 @@ export default function Socios() {
     return pos === filtro
   })
 
+  const pctPromedio = socios.length > 0
+    ? Math.round(socios.reduce((acc, s) => acc + ((statsMap[s.id]?.total || 0) / totalEventos) * 100, 0) / socios.length)
+    : 0
+
   if (loading) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--azul-medio)' }}>Cargando plantilla...</div>
 
   return (
@@ -130,12 +134,14 @@ export default function Socios() {
                              posPrincipal === 'centrocampista' ? '#2ECC71' :
                              posPrincipal === 'delantero' ? '#FFD700' : '#5BB8E8'
 
+          const destacado = pct > pctPromedio
+
           return (
             <div key={socio.id} style={{
-              background: cardBg,
+              background: destacado ? 'linear-gradient(135deg, #FFD700, #B8860B, #FFD700)' : cardBg,
               borderRadius: '12px',
-              padding: '2px',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+              padding: destacado ? '3px' : '2px',
+              boxShadow: destacado ? '0 0 14px rgba(255, 215, 0, 0.6), 0 4px 16px rgba(0,0,0,0.2)' : '0 4px 16px rgba(0,0,0,0.2)',
             }}>
               <div style={{ background: cardBg, borderRadius: '11px', overflow: 'hidden', position: 'relative' }}>
                 <div style={{

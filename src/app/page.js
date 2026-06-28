@@ -85,6 +85,40 @@ export default async function Home() {
 
   const maxAsist = top10[0]?.[1] || 1
 
+  const { data: sociosListaCompleta } = await supabase
+    .from('socios')
+    .select('id, apodo, nombre_completo')
+    .eq('activo', true)
+
+  const { data: entrenosTemporadaRacha } = await supabase
+    .from('eventos')
+    .select('id, fecha')
+    .eq('temporada_id', tempId)
+    .eq('tipo', 'entreno')
+    .eq('estado', 'jugado')
+    .order('fecha', { ascending: false })
+
+  const idsEntrenosRacha = entrenosTemporadaRacha?.map(e => e.id) || []
+
+  const { data: asistenciasRacha } = idsEntrenosRacha.length > 0
+    ? await supabase.from('asistencias').select('socio_id, evento_id').eq('estado', 'asistio').in('evento_id', idsEntrenosRacha)
+    : { data: [] }
+
+  const asistioSetRacha = new Set(asistenciasRacha?.map(a => `${a.evento_id}_${a.socio_id}`))
+
+  const topRachas = (sociosListaCompleta || [])
+    .map(socio => {
+      let racha = 0
+      for (const evento of entrenosTemporadaRacha || []) {
+        if (asistioSetRacha.has(`${evento.id}_${socio.id}`)) racha++
+        else break
+      }
+      return { nombre: socio.apodo || socio.nombre_completo, racha }
+    })
+    .filter(s => s.racha > 0)
+    .sort((a, b) => b.racha - a.racha)
+    .slice(0, 5)
+
   return (
     <div>
       {/* BANNER */}
@@ -289,6 +323,40 @@ export default async function Home() {
           <a href="/estadisticas" style={{ display: 'block', marginTop: '12px', fontSize: '12px', color: 'var(--azul-medio)', textDecoration: 'none' }}>
             Ver ranking completo →
           </a>
+        </div>
+
+        {/* TOP RACHA */}
+        <div style={{
+          backgroundColor: 'var(--blanco)',
+          border: '1px solid var(--azul-claro)',
+          borderRadius: '12px',
+          padding: '20px',
+        }}>
+          <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
+            🔥 Top 5 Racha Asistencias Consecutivas
+          </h2>
+          {topRachas.length === 0 ? (
+            <p style={{ color: '#999', fontSize: '13px' }}>Sin rachas activas aún</p>
+          ) : (
+            topRachas.map((s, i) => (
+              <div key={s.nombre} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '6px 0',
+                borderBottom: i < topRachas.length - 1 ? '1px solid var(--azul-palido)' : 'none',
+              }}>
+                <span style={{
+                  minWidth: '20px', fontSize: '12px', fontWeight: '600',
+                  color: i === 0 ? '#B07800' : i === 1 ? '#888' : i === 2 ? '#993C1D' : 'var(--azul-medio)',
+                }}>
+                  {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
+                </span>
+                <span style={{ flex: 1, fontSize: '13px', color: 'var(--negro)' }}>{s.nombre}</span>
+                <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--naranja)' }}>🔥 {s.racha}</span>
+              </div>
+            ))
+          )}
         </div>
 
       </div>

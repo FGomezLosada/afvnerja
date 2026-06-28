@@ -102,6 +102,41 @@ export default async function Estadisticas() {
     .sort((a, b) => b[1] - a[1])
   const maxGolesHistorico = listaGolesHistorico[0]?.[1] || 1
 
+  const { data: temporadaActivaRacha } = await supabase
+    .from('temporadas')
+    .select('id')
+    .eq('activa', true)
+    .single()
+
+  const { data: entrenosTemporadaRacha } = await supabase
+    .from('eventos')
+    .select('id, fecha')
+    .eq('temporada_id', temporadaActivaRacha?.id)
+    .eq('tipo', 'entreno')
+    .eq('estado', 'jugado')
+    .order('fecha', { ascending: false })
+
+  const idsEntrenosRacha = entrenosTemporadaRacha?.map(e => e.id) || []
+
+  const { data: asistenciasRacha } = idsEntrenosRacha.length > 0
+    ? await supabase.from('asistencias').select('socio_id, evento_id').eq('estado', 'asistio').in('evento_id', idsEntrenosRacha)
+    : { data: [] }
+
+  const asistioSetRacha = new Set(asistenciasRacha?.map(a => `${a.evento_id}_${a.socio_id}`))
+
+  const topRachas10 = (todosSocios || [])
+    .map(s => {
+      let racha = 0
+      for (const evento of entrenosTemporadaRacha || []) {
+        if (asistioSetRacha.has(`${evento.id}_${s.id}`)) racha++
+        else break
+      }
+      return { nombre: s.apodo || s.nombre_completo || 'Desconocido', racha }
+    })
+    .filter(s => s.racha > 0)
+    .sort((a, b) => b.racha - a.racha)
+    .slice(0, 10)
+
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
 
@@ -135,6 +170,40 @@ export default async function Estadisticas() {
         <span><strong>Entreno:</strong> 1 (asistió) · 0 (avisó y no fue) · -1 (no avisó, penalización)</span>
         <span><strong>Partido:</strong> 1 asistencia</span>
         <span><strong>Torneo:</strong> 1 asistencia (independiente del nº de partidos que tenga)</span>
+      </div>
+
+      <div style={{
+        backgroundColor: 'var(--blanco)',
+        border: '1px solid var(--azul-claro)',
+        borderRadius: '12px',
+        padding: '20px',
+        marginBottom: '32px',
+      }}>
+        <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
+          🔥 Top 10 Racha Asistencias Consecutivas — Temporada
+        </h2>
+        {topRachas10.length === 0 ? (
+          <p style={{ color: '#999', fontSize: '13px' }}>Sin rachas activas aún</p>
+        ) : (
+          topRachas10.map((s, i) => (
+            <div key={s.nombre} style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '6px 0',
+              borderBottom: i < topRachas10.length - 1 ? '1px solid var(--azul-palido)' : 'none',
+            }}>
+              <span style={{
+                minWidth: '20px', fontSize: '12px', fontWeight: '600',
+                color: i === 0 ? '#B07800' : i === 1 ? '#888' : i === 2 ? '#993C1D' : 'var(--azul-medio)',
+              }}>
+                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
+              </span>
+              <span style={{ flex: 1, fontSize: '13px', color: 'var(--negro)' }}>{s.nombre}</span>
+              <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--naranja)' }}>🔥 {s.racha}</span>
+            </div>
+          ))
+        )}
       </div>
 
       <h2 style={{ color: 'var(--azul-marino)', fontSize: '20px', fontWeight: '600', marginBottom: '16px' }}>
