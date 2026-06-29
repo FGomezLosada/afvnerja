@@ -115,19 +115,7 @@ export default function DetalleEvento() {
   async function añadirInvitado() {
     if (!nombreInvitado.trim()) return
 
-    const { data: todosInvitados } = await supabase
-      .from('apuntes_entreno')
-      .select('nombre_invitado')
-      .eq('evento_id', id)
-      .eq('es_invitado', true)
-
-    const numerosUsados = (todosInvitados || [])
-      .map(a => {
-        const match = a.nombre_invitado?.match(/^Invitado (\d+)/)
-        return match ? parseInt(match[1]) : 0
-      })
-    const numeroInvitado = numerosUsados.length > 0 ? Math.max(...numerosUsados) + 1 : 1
-    const etiqueta = `Invitado ${numeroInvitado} (${nombreInvitado.trim()})`
+    const etiqueta = `Invitado (${nombreInvitado.trim()})`
 
     const { error } = await supabase.from('apuntes_entreno').insert({
       evento_id: id,
