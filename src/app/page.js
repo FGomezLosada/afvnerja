@@ -168,14 +168,24 @@ export default async function Home() {
   return (
     <div>
       {/* BANNER */}
-      <div style={{
-        backgroundColor: 'var(--azul-marino)',
-        backgroundImage: `url('https://oewqclyiykoplygumshh.supabase.co/storage/v1/object/public/fotos/banner-home.png')`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        aspectRatio: '3.6 / 1',
-        minHeight: '180px',
+      <style>{`
+        .banner-home {
+          background-color: var(--azul-marino);
+          background-image: url('https://oewqclyiykoplygumshh.supabase.co/storage/v1/object/public/fotos/banner-home.png');
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
+          aspect-ratio: 3.6 / 1;
+          min-height: 180px;
+        }
+        @media (max-width: 600px) {
+          .banner-home {
+            background-position: 78% center;
+            aspect-ratio: 2.2 / 1;
+          }
+        }
+      `}</style>
+      <div className="banner-home" style={{
         padding: '40px 24px',
         display: 'flex',
         alignItems: 'flex-start',
