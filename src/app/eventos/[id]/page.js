@@ -29,7 +29,7 @@ export default function DetalleEvento() {
       const { data: ev } = await supabase.from('eventos').select('*').eq('id', id).single()
       setEvento(ev)
 
-      const { data: soc } = await supabase.from('socios').select('*').eq('activo', true).order('apodo')
+      const { data: soc } = await supabase.from('socios').select('id, apodo, nombre_completo').eq('activo', true).order('apodo')
       setSocios(soc || [])
 
       await cargarApuntados()

@@ -29,7 +29,7 @@ export default function Socios() {
   useEffect(() => {
     async function cargar() {
       const [{ data: soc }, { data: asist }, { data: gol }] = await Promise.all([
-        supabase.from('socios').select('*').eq('activo', true).order('apodo'),
+        supabase.from('socios').select('id, apodo, nombre_completo, posicion, posiciones, foto_url').eq('activo', true).order('apodo'),
         supabase.from('asistencias').select('socio_id, estado').in('estado', ['asistio', 'no_aparecio']),
         supabase.from('goles').select('socio_id, cantidad'),
       ])
