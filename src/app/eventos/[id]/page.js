@@ -64,8 +64,12 @@ export default function DetalleEvento() {
     if (!evento) return false
     const ahora = new Date()
     const fechaEntreno = new Date(`${evento.fecha}T${evento.hora || '20:45'}`)
-    const aperturaApunte = new Date(fechaEntreno.getTime() - 36 * 60 * 60 * 1000)
-    const cierreApunte = new Date(fechaEntreno.getTime() - 60 * 60 * 1000)
+
+    const horasApertura = (evento.tipo === 'partido' || evento.tipo === 'torneo') ? 10 * 24 : 36
+    const horasCierre = 1
+
+    const aperturaApunte = new Date(fechaEntreno.getTime() - horasApertura * 60 * 60 * 1000)
+    const cierreApunte = new Date(fechaEntreno.getTime() - horasCierre * 60 * 60 * 1000)
     return ahora >= aperturaApunte && ahora <= cierreApunte
   }
 
