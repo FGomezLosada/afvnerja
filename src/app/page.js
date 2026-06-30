@@ -172,7 +172,7 @@ export default async function Home() {
         backgroundColor: 'var(--azul-marino)',
         backgroundImage: `linear-gradient(135deg, rgba(13,63,122,0.55), rgba(13,63,122,0.35)), url('https://oewqclyiykoplygumshh.supabase.co/storage/v1/object/public/fotos/banner-home.png')`,
         backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        backgroundPosition: '70% center',
         backgroundRepeat: 'no-repeat',
         aspectRatio: '3.6 / 1',
         minHeight: '180px',
