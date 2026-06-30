@@ -170,6 +170,12 @@ export default async function Home() {
       {/* BANNER */}
       <div style={{
         backgroundColor: 'var(--azul-marino)',
+        backgroundImage: `linear-gradient(135deg, rgba(13,63,122,0.55), rgba(13,63,122,0.35)), url('https://oewqclyiykoplygumshh.supabase.co/storage/v1/object/public/fotos/banner-home.png')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        aspectRatio: '3.6 / 1',
+        minHeight: '180px',
         padding: '40px 24px',
         display: 'flex',
         alignItems: 'flex-start',
