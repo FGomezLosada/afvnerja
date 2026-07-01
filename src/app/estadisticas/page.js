@@ -11,19 +11,31 @@ const posicionIcon = (p) => {
 export const revalidate = 0
 
 export default async function Estadisticas() {
-  const { data: asistencias } = await supabase
-    .from('asistencias')
-    .select('socio_id, estado, evento_id, socios(nombre_completo, apodo, posicion), eventos(tipo, cuenta_asistencia)')
-    .in('estado', ['asistio', 'no_aparecio'])
+  const { data: temporadaActiva } = await supabase
+    .from('temporadas')
+    .select('id, nombre')
+    .eq('activa', true)
+    .single()
 
-  const { data: eventos } = await supabase
+  const tempId = temporadaActiva?.id
+
+  const { data: eventosTemporada } = await supabase
     .from('eventos')
-    .select('id, tipo')
-    .eq('cuenta_asistencia', true)
+    .select('id, tipo, cuenta_asistencia')
+    .eq('temporada_id', tempId)
 
-  const totalEventos = eventos?.length || 0
-  const totalEntrenos = eventos?.filter(e => e.tipo === 'entreno').length || 0
-  const totalPartidos = eventos?.filter(e => e.tipo === 'partido').length || 0
+  const eventoIdsConCuenta = eventosTemporada?.filter(e => e.cuenta_asistencia).map(e => e.id) || []
+  const totalEventos = eventoIdsConCuenta.length
+  const totalEntrenos = eventosTemporada?.filter(e => e.tipo === 'entreno' && e.cuenta_asistencia).length || 0
+  const totalPartidosOTorneos = eventosTemporada?.filter(e => (e.tipo === 'partido' || e.tipo === 'torneo') && e.cuenta_asistencia).length || 0
+
+  const { data: asistencias } = eventoIdsConCuenta.length > 0
+    ? await supabase
+        .from('asistencias')
+        .select('socio_id, estado, evento_id, socios(nombre_completo, apodo, posicion), eventos(tipo, cuenta_asistencia)')
+        .in('estado', ['asistio', 'no_aparecio'])
+        .in('evento_id', eventoIdsConCuenta)
+    : { data: [] }
 
   const ranking = {}
   if (asistencias) {
@@ -70,21 +82,17 @@ export default async function Estadisticas() {
   const lista = Object.values(ranking).sort((a, b) => b.total - a.total)
   const maxTotal = lista[0]?.total || 1
 
-  // Ranking goleadores
-  const goleadores = {}
-  if (asistencias) {
-    asistencias.forEach(a => {
-      const nombre = a.socios?.apodo || a.socios?.nombre_completo || 'Desconocido'
-      if (!goleadores[nombre]) goleadores[nombre] = 0
-    })
-  }
-
-  const { data: golesData } = await supabase
-    .from('goles')
-    .select('cantidad, socios(nombre_completo, apodo)')
+  // Ranking goleadores — TEMPORADA ACTUAL
+  const eventoIdsTemporada = eventosTemporada?.map(e => e.id) || []
+  const { data: golesTemporadaData } = eventoIdsTemporada.length > 0
+    ? await supabase
+        .from('goles')
+        .select('cantidad, socios(nombre_completo, apodo), evento_id')
+        .in('evento_id', eventoIdsTemporada)
+    : { data: [] }
 
   const rankingGoles = {}
-  golesData?.forEach(g => {
+  golesTemporadaData?.forEach(g => {
     const nombre = g.socios?.apodo || g.socios?.nombre_completo || 'Desconocido'
     rankingGoles[nombre] = (rankingGoles[nombre] || 0) + (g.cantidad || 1)
   })
@@ -92,6 +100,11 @@ export default async function Estadisticas() {
   const listaGoles = Object.entries(rankingGoles)
     .sort((a, b) => b[1] - a[1])
   const maxGoles = listaGoles[0]?.[1] || 1
+
+  // Ranking histórico de goleadores — TODAS LAS TEMPORADAS (sin filtrar, a propósito)
+  const { data: golesData } = await supabase
+    .from('goles')
+    .select('cantidad, socios(nombre_completo, apodo)')
 
   const rankingGolesHistorico = {}
   golesData?.forEach(g => {
@@ -102,16 +115,10 @@ export default async function Estadisticas() {
     .sort((a, b) => b[1] - a[1])
   const maxGolesHistorico = listaGolesHistorico[0]?.[1] || 1
 
-  const { data: temporadaActivaRacha } = await supabase
-    .from('temporadas')
-    .select('id')
-    .eq('activa', true)
-    .single()
-
   const { data: entrenosTemporadaRacha } = await supabase
     .from('eventos')
     .select('id, fecha')
-    .eq('temporada_id', temporadaActivaRacha?.id)
+    .eq('temporada_id', tempId)
     .eq('tipo', 'entreno')
     .eq('estado', 'jugado')
     .order('fecha', { ascending: false })
@@ -141,15 +148,15 @@ export default async function Estadisticas() {
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
 
       <h1 style={{ color: 'var(--azul-marino)', fontSize: '28px', fontWeight: '600', marginBottom: '8px' }}>
-        Estadísticas — Temporada 2025-26
+        Estadísticas — Temporada {temporadaActiva?.nombre || ''}
       </h1>
 
       <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '32px' }}>
         {[
           { label: 'Total eventos', valor: totalEventos },
           { label: 'Entrenos', valor: totalEntrenos },
-          { label: 'Partidos', valor: eventos?.filter(e => e.tipo === 'partido').length || 0 },
-      { label: 'Torneos', valor: eventos?.filter(e => e.tipo === 'torneo').length || 0 },
+          { label: 'Partidos', valor: eventosTemporada?.filter(e => e.tipo === 'partido' && e.cuenta_asistencia).length || 0 },
+          { label: 'Torneos', valor: eventosTemporada?.filter(e => e.tipo === 'torneo' && e.cuenta_asistencia).length || 0 },
           { label: 'Socios', valor: lista.length },
         ].map(s => (
           <div key={s.label} style={{
@@ -209,11 +216,10 @@ export default async function Estadisticas() {
       <h2 style={{ color: 'var(--azul-marino)', fontSize: '20px', fontWeight: '600', marginBottom: '16px' }}>
         🏆 Ranking de asistencias
       </h2>
-      {/* Contenedor con scroll horizontal en móvil */}
-      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', borderRadius: '12px', border: '1px solid var(--azul-claro)', paddingRight: '16px' }}>
-        <div style={{ minWidth: '600px' }}>
 
-          {/* Cabecera tabla */}
+      <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', borderRadius: '12px', border: '1px solid var(--azul-claro)', paddingRight: '16px', marginBottom: '40px' }}>
+        <div style={{ minWidth: '600px' }}>
+          {/* Cabecera */}
           <div style={{
             backgroundColor: 'var(--azul-marino)',
             padding: '12px 20px',
@@ -297,10 +303,10 @@ export default async function Estadisticas() {
                 textAlign: 'center',
                 fontSize: '12px',
                 fontWeight: '500',
-                color: socio.total / totalEventos > 0.7 ? 'var(--azul-medio)' :
-                       socio.total / totalEventos > 0.4 ? 'var(--azul-cielo)' : '#999',
+                color: totalEventos > 0 && socio.total / totalEventos > 0.7 ? 'var(--azul-medio)' :
+                       totalEventos > 0 && socio.total / totalEventos > 0.4 ? 'var(--azul-cielo)' : '#999',
               }}>
-                {Math.round((socio.total / totalEventos) * 100)}%
+                {totalEventos > 0 ? Math.round((socio.total / totalEventos) * 100) : 0}%
               </span>
             </div>
           ))}
@@ -310,7 +316,7 @@ export default async function Estadisticas() {
 {/* Ranking goleadores */}
       <div style={{ marginTop: '40px' }}>
         <h2 style={{ color: 'var(--azul-marino)', fontSize: '20px', fontWeight: '600', marginBottom: '16px' }}>
-          ⚽ Ranking de goleadores
+          ⚽ Ranking de goleadores — Temporada
         </h2>
         <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', borderRadius: '12px', border: '1px solid var(--azul-claro)', paddingRight: '16px' }}>
           <div style={{ minWidth: '400px' }}>
