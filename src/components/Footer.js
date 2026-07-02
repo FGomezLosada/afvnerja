@@ -82,6 +82,10 @@ export default function Footer() {
         color: 'rgba(255,255,255,0.4)',
       }}>
         © {new Date().getFullYear()} A.F.V. Nerja — Asociación de Fútbol Veteranos de Nerja
+        <br />
+        <a href="/privacidad" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none', fontSize: '11px' }}>
+          Política de Privacidad
+        </a>
       </div>
     </footer>
   )
