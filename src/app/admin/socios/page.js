@@ -22,7 +22,7 @@ export default function AdminSocios() {
   const router = useRouter()
 
   const formInicial = {
-    nombre_completo: '', apodo: '', telefono: '',
+    nombre_completo: '', apodo: '', telefono: '', dni: '',
     fecha_nacimiento: '', tipo_socio: 'activo_entrenos',
     posicion: '', posiciones: [], procedencia: '', fecha_alta: '',
     talla_general: '', talla_superior: '', talla_inferior: '',
@@ -52,6 +52,7 @@ export default function AdminSocios() {
     setForm({
       nombre_completo: socio.nombre_completo || '',
       apodo: socio.apodo || '',
+      dni: socio.dni || '',
       telefono: socio.telefono || '',
       fecha_nacimiento: socio.fecha_nacimiento || '',
       tipo_socio: socio.tipo_socio || 'activo_entrenos',
@@ -78,6 +79,7 @@ posiciones: socio.posiciones || [],
     const datos = {
       nombre_completo: form.nombre_completo,
       apodo: form.apodo || form.nombre_completo,
+      dni: form.dni || null,
       telefono: form.telefono || null,
       fecha_nacimiento: form.fecha_nacimiento || null,
       tipo_socio: form.tipo_socio,
@@ -206,6 +208,7 @@ posiciones: form.posiciones,
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0 16px' }}>
               {campo('Nombre completo *', 'nombre_completo')}
               {campo('Apodo / nombre en el grupo', 'apodo')}
+              {campo('DNI / NIE', 'dni', 'text')}
               {campo('Teléfono', 'telefono', 'tel')}
               {campo('Fecha de nacimiento', 'fecha_nacimiento', 'date')}
               {campo('Fecha de alta', 'fecha_alta', 'date')}
