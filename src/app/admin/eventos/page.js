@@ -21,6 +21,7 @@ export default function AdminEventos() {
   const [nuevoGolCantidad, setNuevoGolCantidad] = useState(1)
   const [nuevoGolNotas, setNuevoGolNotas] = useState('')
   const [socios, setSocios] = useState([])
+  const [filtroTipo, setFiltroTipo] = useState('todos')
   const router = useRouter()
 
   const [form, setForm] = useState({
@@ -363,9 +364,25 @@ export default function AdminEventos() {
         </div>
       )}
 
+      {/* Filtro por tipo */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+        {['todos', 'entreno', 'partido', 'torneo', 'viaje', 'social', 'benefico'].map(tipo => (
+          <button key={tipo} onClick={() => setFiltroTipo(tipo)} style={{
+            padding: '6px 14px', fontSize: '12px', borderRadius: '20px', cursor: 'pointer',
+            backgroundColor: filtroTipo === tipo ? 'var(--azul-marino)' : 'var(--azul-palido)',
+            color: filtroTipo === tipo ? 'white' : 'var(--azul-medio)',
+            border: `1px solid ${filtroTipo === tipo ? 'var(--azul-marino)' : 'var(--azul-claro)'}`,
+            fontWeight: filtroTipo === tipo ? '600' : '400',
+            textTransform: 'capitalize',
+          }}>
+            {tipo === 'todos' ? 'Todos' : tipo}
+          </button>
+        ))}
+      </div>
+
       {/* Lista de eventos */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {eventos.map(evento => {
+        {eventos.filter(e => filtroTipo === 'todos' || e.tipo === filtroTipo).map(evento => {
           const fecha = new Date(evento.fecha + 'T12:00:00')
           const fechaStr = fecha.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
           return (
