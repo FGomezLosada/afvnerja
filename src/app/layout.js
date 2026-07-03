@@ -10,6 +10,7 @@ export const metadata = {
   metadataBase: new URL('https://afvnerja.vercel.app'),
   title: 'A.F.V. Nerja — Veteranos',
   description: 'Web oficial de la Asociación de Fútbol Veteranos de Nerja',
+  manifest: '/manifest.json',
   icons: {
     icon: '/favicon.ico',
     apple: '/apple-touch-icon.png',
@@ -25,6 +26,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="es">
       <body className={inter.className}>
+        <script dangerouslySetInnerHTML={{ __html: `if ('serviceWorker' in navigator) { window.addEventListener('load', function() { navigator.serviceWorker.register('/sw.js') }) }` }} />
         <Navbar />
         <main>
           {children}
