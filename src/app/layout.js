@@ -6,6 +6,7 @@ import Footer from '@/components/Footer'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
+  manifest: '/manifest.json',
   metadataBase: new URL('https://afvnerja.vercel.app'),
   title: 'A.F.V. Nerja — Veteranos',
   description: 'Web oficial de la Asociación de Fútbol Veteranos de Nerja',
