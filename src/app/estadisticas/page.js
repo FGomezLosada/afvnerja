@@ -187,7 +187,7 @@ export default async function Estadisticas() {
         marginBottom: '32px',
       }}>
         <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
-          🔥 Top 10 Racha Asistencias Consecutivas — Temporada
+          🔥 Top 10 Racha Entrenos Consecutivos — Temporada
         </h2>
         {topRachas10.length === 0 ? (
           <p style={{ color: '#999', fontSize: '13px' }}>Sin rachas activas aún</p>

@@ -415,7 +415,7 @@ export default async function Home() {
           padding: '20px',
         }}>
           <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '600', marginBottom: '16px' }}>
-            🔥 Top 5 Racha Asistencias Consecutivas
+            🔥 Top 5 Racha Entrenos Consecutivos
           </h2>
           {topRachas.length === 0 ? (
             <p style={{ color: '#999', fontSize: '13px' }}>Sin rachas activas aún</p>
@@ -439,6 +439,9 @@ export default async function Home() {
               </div>
             ))
           )}
+          <a href="/estadisticas" style={{ display: 'block', marginTop: '12px', fontSize: '12px', color: 'var(--azul-medio)', textDecoration: 'none' }}>
+            Ver ranking completo →
+          </a>
         </div>
 
         {/* TOP GOLEADORES */}

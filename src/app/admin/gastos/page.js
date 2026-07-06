@@ -15,6 +15,7 @@ export default function AdminGastos() {
   const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState('')
   const [gastoEditando, setGastoEditando] = useState(null)
+  const [filtroCategoria, setFiltroCategoria] = useState('todos')
   const router = useRouter()
 
   const formInicial = {
@@ -33,8 +34,8 @@ export default function AdminGastos() {
       setTemporada(temp)
 
       const [{ data: g }, { data: ev }] = await Promise.all([
-        supabase.from('gastos').select('*, eventos(titulo, fecha)').eq('temporada_id', temp?.id).order('fecha', { ascending: false }),
-        supabase.from('eventos').select('id, titulo, fecha, tipo').order('fecha', { ascending: false }),
+        supabase.from('gastos').select('*, eventos(titulo, fecha)').eq('temporada_id', temp?.id).order('fecha', { ascending: false, nullsFirst: false }),
+        supabase.from('eventos').select('id, titulo, fecha, tipo').order('fecha', { ascending: false, nullsFirst: false }),
       ])
       setGastos(g || [])
       setEventos(ev || [])
@@ -48,7 +49,7 @@ export default function AdminGastos() {
       .from('gastos')
       .select('*, eventos(titulo, fecha)')
       .eq('temporada_id', tempId)
-      .order('fecha', { ascending: false })
+      .order('fecha', { ascending: false, nullsFirst: false })
     setGastos(data || [])
   }
 
@@ -213,13 +214,29 @@ export default function AdminGastos() {
         </div>
       )}
 
+      {/* Filtro por categoría */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+        {['todos', ...categoriaOpciones].map(cat => (
+          <button key={cat} onClick={() => setFiltroCategoria(cat)} style={{
+            padding: '6px 14px', fontSize: '12px', borderRadius: '20px', cursor: 'pointer',
+            backgroundColor: filtroCategoria === cat ? 'var(--azul-marino)' : 'var(--azul-palido)',
+            color: filtroCategoria === cat ? 'white' : 'var(--azul-medio)',
+            border: `1px solid ${filtroCategoria === cat ? 'var(--azul-marino)' : 'var(--azul-claro)'}`,
+            fontWeight: filtroCategoria === cat ? '600' : '400',
+            textTransform: 'capitalize',
+          }}>
+            {cat === 'todos' ? 'Todos' : cat}
+          </button>
+        ))}
+      </div>
+
       {/* Lista gastos */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {gastos.length === 0 ? (
+        {gastos.filter(g => filtroCategoria === 'todos' || g.categoria === filtroCategoria).length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px', color: 'var(--azul-medio)', fontSize: '14px' }}>
             No hay gastos registrados todavía
           </div>
-        ) : gastos.map(gasto => (
+        ) : gastos.filter(g => filtroCategoria === 'todos' || g.categoria === filtroCategoria).map(gasto => (
           <div key={gasto.id} style={{
             backgroundColor: 'var(--blanco)', border: '1px solid var(--azul-claro)',
             borderLeft: `4px solid ${categoriaColor[gasto.categoria] || '#888'}`,
