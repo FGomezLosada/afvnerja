@@ -82,6 +82,17 @@ export default async function Estadisticas() {
   const lista = Object.values(ranking).sort((a, b) => b.total - a.total)
   const maxTotal = lista[0]?.total || 1
 
+  const totalAsistenciasEntrenos = lista.reduce((sum, s) => sum + s.entrenos, 0)
+  const mediaAsistentesEntreno = totalEntrenos > 0
+    ? Math.round((totalAsistenciasEntrenos / totalEntrenos) * 10) / 10
+    : 0
+  const pctMediaGrupo = totalEntrenos > 0
+    ? Math.round((mediaAsistentesEntreno / totalEntrenos) * 100)
+    : 0
+  const sociosEnMedia = lista
+    .filter(s => totalEntrenos > 0 && Math.round((s.entrenos / totalEntrenos) * 100) >= pctMediaGrupo)
+    .sort((a, b) => b.entrenos - a.entrenos)
+
   // Ranking goleadores — TEMPORADA ACTUAL
   const eventoIdsTemporada = eventosTemporada?.map(e => e.id) || []
   const { data: golesTemporadaData } = eventoIdsTemporada.length > 0
@@ -177,6 +188,100 @@ export default async function Estadisticas() {
         <span><strong>Entreno:</strong> 1 (asistió) · 0 (avisó y no fue) · -1 (no avisó, penalización)</span>
         <span><strong>Partido:</strong> 1 asistencia</span>
         <span><strong>Torneo:</strong> 1 asistencia (independiente del nº de partidos que tenga)</span>
+      </div>
+
+      <div style={{
+        backgroundColor: 'var(--blanco)',
+        border: '2px solid var(--azul-medio)',
+        borderRadius: '12px',
+        padding: '20px',
+        marginBottom: '32px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+          <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '600' }}>
+            ✅ Socios en la media o por encima — Entrenos
+          </h2>
+          <span style={{ backgroundColor: 'var(--azul-marino)', color: 'white', borderRadius: '20px', padding: '4px 14px', fontSize: '13px', fontWeight: '600' }}>
+            Media grupo: {mediaAsistentesEntreno} · {pctMediaGrupo}% · {sociosEnMedia.length} socios
+          </span>
+        </div>
+        <p style={{ fontSize: '12px', color: '#888', marginBottom: '14px' }}>
+          Media del grupo: {mediaAsistentesEntreno} asistentes por entreno ({pctMediaGrupo}% sobre {totalEntrenos} jugados). Se muestran los socios con ese % o superior.
+        </p>
+        {(() => {
+          const sociosBajo = lista
+            .filter(s => totalEntrenos > 0 && Math.round((s.entrenos / totalEntrenos) * 100) < pctMediaGrupo)
+            .sort((a, b) => b.entrenos - a.entrenos)
+            .slice(0, 5)
+
+          const filaStyle = (i, total) => ({
+            display: 'grid',
+            gridTemplateColumns: '30px 1fr 60px 60px',
+            gap: '8px',
+            alignItems: 'center',
+            padding: '8px 12px',
+            borderBottom: i < total - 1 ? '1px solid var(--azul-palido)' : 'none',
+            backgroundColor: i % 2 === 0 ? 'var(--blanco)' : 'var(--azul-palido)',
+          })
+
+          return (
+            <>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '30px 1fr 60px 60px',
+                gap: '8px',
+                padding: '8px 12px',
+                backgroundColor: 'var(--azul-marino)',
+                borderRadius: '6px',
+                marginBottom: '4px',
+              }}>
+                <span style={{ fontSize: '11px', color: 'white', fontWeight: '600' }}>#</span>
+                <span style={{ fontSize: '11px', color: 'white', fontWeight: '600' }}>Socio</span>
+                <span style={{ fontSize: '11px', color: 'white', fontWeight: '600', textAlign: 'center' }}>Entrenos</span>
+                <span style={{ fontSize: '11px', color: 'white', fontWeight: '600', textAlign: 'center' }}>%</span>
+              </div>
+
+              {sociosEnMedia.map((s, i) => {
+                const pct = totalEntrenos > 0 ? Math.round((s.entrenos / totalEntrenos) * 100) : 0
+                return (
+                  <div key={s.nombre} style={filaStyle(i, sociosEnMedia.length)}>
+                    <span style={{ fontSize: '12px', fontWeight: '600', color: i === 0 ? '#B07800' : i === 1 ? '#888' : i === 2 ? '#993C1D' : 'var(--azul-medio)' }}>
+                      {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
+                    </span>
+                    <span style={{ fontSize: '13px', fontWeight: '500', color: 'var(--azul-marino)' }}>{s.nombre}</span>
+                    <span style={{ fontSize: '13px', textAlign: 'center', color: 'var(--azul-medio)' }}>{s.entrenos}</span>
+                    <span style={{ fontSize: '13px', textAlign: 'center', fontWeight: '600', color: 'var(--azul-medio)' }}>{pct}%</span>
+                  </div>
+                )
+              })}
+
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '10px 12px', margin: '4px 0',
+                backgroundColor: 'var(--azul-marino)', borderRadius: '6px',
+              }}>
+                <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.3)' }} />
+                <span style={{ fontSize: '12px', fontWeight: '600', color: 'white', whiteSpace: 'nowrap' }}>
+                  ── Media del grupo: {mediaAsistentesEntreno} asistentes · {pctMediaGrupo}% ──
+                </span>
+                <div style={{ flex: 1, height: '1px', backgroundColor: 'rgba(255,255,255,0.3)' }} />
+              </div>
+
+              {sociosBajo.map((s, i) => {
+                const pct = totalEntrenos > 0 ? Math.round((s.entrenos / totalEntrenos) * 100) : 0
+                const diff = pctMediaGrupo - pct
+                return (
+                  <div key={s.nombre} style={{ ...filaStyle(i, sociosBajo.length), opacity: 0.7 }}>
+                    <span style={{ fontSize: '12px', color: '#999' }}>{sociosEnMedia.length + i + 1}</span>
+                    <span style={{ fontSize: '13px', color: '#666' }}>{s.nombre}</span>
+                    <span style={{ fontSize: '13px', textAlign: 'center', color: '#999' }}>{s.entrenos}</span>
+                    <span style={{ fontSize: '12px', textAlign: 'center', color: 'var(--naranja)' }}>{pct}%</span>
+                  </div>
+                )
+              })}
+            </>
+          )
+        })()}
       </div>
 
       <div style={{
