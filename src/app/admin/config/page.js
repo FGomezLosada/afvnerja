@@ -42,6 +42,9 @@ export default function AdminConfig() {
   const [guardando, setGuardando] = useState(false)
   const [generando, setGenerando] = useState(false)
   const [mensaje, setMensaje] = useState('')
+  const [premiosData, setPremiosData] = useState({})
+  const [editandoPremios, setEditandoPremios] = useState(null)
+  const [formPremio, setFormPremio] = useState({ categoria: '', ganador: '', descripcion: '' })
   const router = useRouter()
 
   const formInicial = {
@@ -71,6 +74,13 @@ export default function AdminConfig() {
       .select('*')
       .order('fecha_inicio', { ascending: false })
     setTemporadas(data || [])
+
+    const { data: premios } = await supabase
+      .from('premios_temporada')
+      .select('*')
+    const premiosMap = {}
+    premios?.forEach(p => { premiosMap[p.temporada_id] = p })
+    setPremiosData(premiosMap)
     setLoading(false)
   }
 
@@ -135,6 +145,40 @@ export default function AdminConfig() {
     cargarTemporadas()
     setGuardando(false)
     setTimeout(() => setMensaje(''), 5000)
+  }
+
+  async function toggleVisibleHome(tempId) {
+    const actual = premiosData[tempId]
+    if (actual) {
+      await supabase.from('premios_temporada').update({ visible_home: !actual.visible_home }).eq('id', actual.id)
+      setPremiosData(prev => ({ ...prev, [tempId]: { ...actual, visible_home: !actual.visible_home } }))
+    } else {
+      const { data } = await supabase.from('premios_temporada').insert({ temporada_id: tempId, visible_home: true, premios: [] }).select().single()
+      if (data) setPremiosData(prev => ({ ...prev, [tempId]: data }))
+    }
+  }
+
+  async function guardarPremio(tempId) {
+    if (!formPremio.categoria.trim() || !formPremio.ganador.trim()) return
+    const actual = premiosData[tempId]
+    const listaPremios = actual?.premios || []
+    const nuevaLista = [...listaPremios, formPremio]
+    if (actual) {
+      await supabase.from('premios_temporada').update({ premios: nuevaLista }).eq('id', actual.id)
+      setPremiosData(prev => ({ ...prev, [tempId]: { ...actual, premios: nuevaLista } }))
+    } else {
+      const { data } = await supabase.from('premios_temporada').insert({ temporada_id: tempId, visible_home: false, premios: nuevaLista }).select().single()
+      if (data) setPremiosData(prev => ({ ...prev, [tempId]: data }))
+    }
+    setFormPremio({ categoria: '', ganador: '', descripcion: '' })
+  }
+
+  async function eliminarPremio(tempId, index) {
+    const actual = premiosData[tempId]
+    if (!actual) return
+    const nuevaLista = actual.premios.filter((_, i) => i !== index)
+    await supabase.from('premios_temporada').update({ premios: nuevaLista }).eq('id', actual.id)
+    setPremiosData(prev => ({ ...prev, [tempId]: { ...actual, premios: nuevaLista } }))
   }
 
   async function activarTemporada(id) {
@@ -284,6 +328,75 @@ export default function AdminConfig() {
                 </button>
               )}
             </div>
+
+            {/* Premios */}
+            <div style={{ marginTop: '16px', borderTop: '1px solid var(--azul-claro)', paddingTop: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--azul-marino)' }}>🏆 Premios de temporada</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--azul-medio)' }}>Mostrar en home</span>
+                  <button onClick={() => toggleVisibleHome(temp.id)} style={{
+                    width: '44px', height: '24px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+                    backgroundColor: premiosData[temp.id]?.visible_home ? 'var(--azul-medio)' : '#ccc',
+                    position: 'relative', transition: 'background 0.2s',
+                  }}>
+                    <span style={{
+                      position: 'absolute', top: '3px',
+                      left: premiosData[temp.id]?.visible_home ? '22px' : '3px',
+                      width: '18px', height: '18px', borderRadius: '50%',
+                      backgroundColor: 'white', transition: 'left 0.2s',
+                    }} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Lista de premios */}
+              {(premiosData[temp.id]?.premios || []).length === 0 ? (
+                <p style={{ fontSize: '12px', color: '#999', marginBottom: '10px' }}>Sin premios registrados aún.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
+                  {(premiosData[temp.id]?.premios || []).map((p, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', backgroundColor: 'var(--azul-palido)', borderRadius: '8px' }}>
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--azul-marino)' }}>{p.categoria}</span>
+                        <span style={{ fontSize: '12px', color: 'var(--azul-medio)' }}> · {p.ganador}</span>
+                        {p.descripcion && <span style={{ fontSize: '12px', color: '#666' }}> — {p.descripcion}</span>}
+                      </div>
+                      <button onClick={() => { setEditandoPremios(temp.id); setFormPremio({ ...p }); eliminarPremio(temp.id, i) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--azul-medio)', fontSize: '13px', marginRight: '4px' }}>✏️</button>
+                      <button onClick={() => eliminarPremio(temp.id, i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C92F2F', fontSize: '14px' }}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Añadir premio */}
+              {editandoPremios === temp.id ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <input placeholder="Categoría (ej: 🥇 Mayor asistencia)" value={formPremio.categoria}
+                    onChange={e => setFormPremio(p => ({ ...p, categoria: e.target.value }))}
+                    style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--azul-claro)', fontSize: '13px' }} />
+                  <input placeholder="Ganador (nombre del socio)" value={formPremio.ganador}
+                    onChange={e => setFormPremio(p => ({ ...p, ganador: e.target.value }))}
+                    style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--azul-claro)', fontSize: '13px' }} />
+                  <input placeholder="Premio (ej: Vale 60€ — Pizzería La Roima)" value={formPremio.descripcion}
+                    onChange={e => setFormPremio(p => ({ ...p, descripcion: e.target.value }))}
+                    style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--azul-claro)', fontSize: '13px' }} />
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={() => guardarPremio(temp.id)} style={{ padding: '8px 16px', backgroundColor: 'var(--azul-marino)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                      Guardar premio
+                    </button>
+                    <button onClick={() => { setEditandoPremios(null); setFormPremio({ categoria: '', ganador: '', descripcion: '' }) }} style={{ padding: '8px 16px', backgroundColor: 'var(--azul-palido)', color: 'var(--azul-medio)', border: '1px solid var(--azul-claro)', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => setEditandoPremios(temp.id)} style={{ padding: '6px 14px', backgroundColor: 'var(--azul-palido)', color: 'var(--azul-marino)', border: '1px solid var(--azul-claro)', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
+                  + Añadir premio
+                </button>
+              )}
+            </div>
+
           </div>
         ))}
       </div>

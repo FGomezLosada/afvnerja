@@ -165,6 +165,13 @@ export default async function Home() {
   const chartWidth = padLeft + evolucionMensual.length * (barWidth + gap) + 10
   const yObjetivo = chartHeight - padBottom - (OBJETIVO_ASISTENCIA / maxValor) * (chartHeight - padBottom - padTop)
 
+  const { data: premiosHome } = await supabase
+    .from('premios_temporada')
+    .select('*')
+    .eq('temporada_id', tempId)
+    .eq('visible_home', true)
+    .single()
+
   return (
     <div>
       {/* BANNER */}
@@ -310,44 +317,39 @@ export default async function Home() {
         </div>
 
         {/* PREMIOS FIN DE TEMPORADA */}
-        <div style={{
-          backgroundColor: 'var(--blanco)',
-          border: '1px solid var(--azul-claro)',
-          borderRadius: '12px',
-          padding: '20px',
-          gridColumn: '1 / -1',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-            <span style={{ fontSize: '22px' }}>🏆</span>
-            <div>
-              <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '700', margin: 0 }}>
-                Premios Final de Temporada 2025-26
-              </h2>
-              <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>Mayor implicación y asistencia</p>
-            </div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: 'var(--azul-palido)', borderRadius: '8px', border: '1px solid var(--azul-claro)' }}>
-              <span style={{ fontSize: '28px' }}>🥇</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '11px', color: 'var(--azul-medio)', fontWeight: '600', textTransform: 'uppercase' }}>Mayor asistencia</div>
-                <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--azul-marino)' }}>Paco Gómez</div>
+        {premiosHome && premiosHome.premios?.length > 0 && (
+          <div style={{
+            backgroundColor: 'var(--blanco)',
+            border: '1px solid var(--azul-claro)',
+            borderRadius: '12px',
+            padding: '20px',
+            gridColumn: '1 / -1',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+              <span style={{ fontSize: '22px' }}>🏆</span>
+              <div>
+                <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '700', margin: 0 }}>
+                  Premios Final de Temporada
+                </h2>
+                <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>Mayor implicación y asistencia</p>
               </div>
-              <div style={{ fontSize: '12px', color: '#666', textAlign: 'right' }}>🎁 Vale 60€<br/>Pizzería La Roima</div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: 'var(--azul-palido)', borderRadius: '8px', border: '1px solid var(--azul-claro)' }}>
-              <span style={{ fontSize: '28px' }}>🎲</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '11px', color: 'var(--azul-medio)', fontWeight: '600', textTransform: 'uppercase' }}>Sorteo ranking 2.º–10.º</div>
-                <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--azul-marino)' }}>Juan Carlos</div>
-              </div>
-              <div style={{ fontSize: '12px', color: '#666', textAlign: 'right' }}>🎁 Cuota 2026-27<br/>gratuita</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+              {premiosHome.premios.map((p, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: 'var(--azul-palido)', borderRadius: '8px', border: '1px solid var(--azul-claro)' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '11px', color: 'var(--azul-medio)', fontWeight: '600', textTransform: 'uppercase' }}>{p.categoria}</div>
+                    <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--azul-marino)' }}>{p.ganador}</div>
+                  </div>
+                  {p.descripcion && <div style={{ fontSize: '12px', color: '#666', textAlign: 'right' }}>🎁 {p.descripcion}</div>}
+                </div>
+              ))}
             </div>
+            <p style={{ textAlign: 'center', fontSize: '13px', color: 'var(--azul-medio)', fontWeight: '600' }}>
+              👏 ¡Enhorabuena a los premiados! 💙
+            </p>
           </div>
-          <p style={{ textAlign: 'center', fontSize: '13px', color: 'var(--azul-medio)', fontWeight: '600' }}>
-            👏 ¡Enhorabuena a los premiados! 💙
-          </p>
-        </div>
+        )}
 
         {/* PRÓXIMOS EVENTOS */}
         <div style={{
