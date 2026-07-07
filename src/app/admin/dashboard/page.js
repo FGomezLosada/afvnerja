@@ -43,7 +43,7 @@ export default function Dashboard() {
       // Eventos de la temporada activa
       const { data: eventosTemp } = await supabase
         .from('eventos')
-        .select('id, tipo, estado')
+        .select('id, tipo, estado, torneo_id')
         .eq('temporada_id', tempActiva?.id)
 
       const entrenos = eventosTemp?.filter(e => e.tipo === 'entreno' && e.estado === 'jugado').length || 0
@@ -52,6 +52,7 @@ export default function Dashboard() {
       const partidosProgramados = eventosTemp?.filter(e => e.tipo === 'partido' && e.estado === 'programado').length || 0
       const torneos = eventosTemp?.filter(e => e.tipo === 'torneo' && e.estado === 'jugado').length || 0
       const torneosProgramados = eventosTemp?.filter(e => e.tipo === 'torneo' && e.estado === 'programado').length || 0
+      const partidosEnTorneo = eventosTemp?.filter(e => e.tipo === 'partido' && e.estado === 'jugado' && e.torneo_id).length || 0
       const otros = eventosTemp?.filter(e => !['entreno','partido','torneo'].includes(e.tipo) && e.estado === 'jugado').length || 0
       const otrosProgramados = eventosTemp?.filter(e => !['entreno','partido','torneo'].includes(e.tipo) && e.estado === 'programado').length || 0
 
@@ -65,7 +66,7 @@ export default function Dashboard() {
       const pagoIds = cuotasPagadas?.map(c => c.socio_id) || []
       const pendientes = (socios || 0) - pagoIds.length
 
-      setStats({ socios, entrenos, entrenosProgramados, partidos, partidosProgramados, torneos, torneosProgramados, otros, otrosProgramados, cuotas_pendientes: pendientes })
+      setStats({ socios, entrenos, entrenosProgramados, partidos, partidosProgramados, torneos, torneosProgramados, otros, otrosProgramados, cuotas_pendientes: pendientes, partidosEnTorneo })
 
       // Top 3 no_aparecio (temporada activa)
       const eventoIds = eventosTemp?.map(e => e.id) || []
@@ -195,7 +196,7 @@ export default function Dashboard() {
         {[
           { label: 'Entrenos', jugados: stats.entrenos, programados: stats.entrenosProgramados, icono: '⚽' },
           { label: 'Partidos', jugados: stats.partidos, programados: stats.partidosProgramados, icono: '🏟️' },
-          { label: 'Torneos', jugados: stats.torneos, programados: stats.torneosProgramados, icono: '🏆' },
+          { label: 'Torneos', jugados: stats.torneos, programados: stats.torneosProgramados, icono: '🏆', extra: stats.partidosEnTorneo },
           { label: 'Otros', jugados: stats.otros, programados: stats.otrosProgramados, icono: '🎉' },
         ].map(e => (
           <div key={e.label} style={{ backgroundColor: 'var(--blanco)', border: '1px solid var(--azul-claro)', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
@@ -211,6 +212,11 @@ export default function Dashboard() {
                 <div style={{ fontSize: '20px', fontWeight: '700', color: 'var(--azul-cielo)' }}>{e.programados}</div>
                 <div style={{ fontSize: '10px', color: '#888' }}>pendientes</div>
               </div>
+              {e.extra > 0 && (
+                <div style={{ width: '100%', marginTop: '6px', fontSize: '10px', color: '#888', textAlign: 'center' }}>
+                  ({e.extra} partidos dentro)
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -254,7 +260,10 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Top 3 penalizaciones y borrados */}
+      {/* Seguimiento de implicación */}
+      <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>
+        📋 Seguimiento de implicación — Temporada
+      </h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '32px' }}>
 
         <div style={{ backgroundColor: 'var(--blanco)', border: '1px solid var(--azul-claro)', borderRadius: '12px', padding: '20px' }}>
@@ -276,7 +285,7 @@ export default function Dashboard() {
 
         <div style={{ backgroundColor: 'var(--blanco)', border: '1px solid var(--azul-claro)', borderRadius: '12px', padding: '20px' }}>
           <h3 style={{ color: 'var(--azul-marino)', fontSize: '14px', fontWeight: '600', marginBottom: '14px' }}>
-            🚪 Top 3 bajas de lista — Temporada
+            🚪 Top 3 "Bajas de lista" — Temporada
           </h3>
           {topBorrados.length === 0 ? (
             <p style={{ fontSize: '13px', color: '#999' }}>Sin bajas de lista esta temporada</p>
