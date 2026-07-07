@@ -311,6 +311,43 @@ export default function DetalleTemporada() {
         )}
       </div>
 
+      {/* PREMIOS DE TEMPORADA */}
+      {id === '9e5e2100-e4f4-4a33-8949-b27ceb2b169a' && (
+        <div style={{
+          backgroundColor: 'var(--blanco)',
+          border: '2px solid #B07800',
+          borderRadius: '12px',
+          padding: '20px',
+          marginBottom: '24px',
+          background: 'linear-gradient(135deg, #fffbf0, #fff8e1)',
+        }}>
+          <h2 style={{ color: '#B07800', fontSize: '16px', fontWeight: '700', marginBottom: '16px', textAlign: 'center' }}>
+            🏆 Premios Final de Temporada 2025-26
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '12px', backgroundColor: 'rgba(176,120,0,0.08)', borderRadius: '8px', border: '1px solid rgba(176,120,0,0.2)' }}>
+              <span style={{ fontSize: '24px' }}>🥇</span>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#B07800', marginBottom: '2px' }}>Mayor asistencia a entrenos y eventos</div>
+                <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--azul-marino)' }}>Paco Gómez</div>
+                <div style={{ fontSize: '13px', color: '#666', marginTop: '2px' }}>🎁 Vale de 60€ — Pizzería La Roima</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '12px', backgroundColor: 'rgba(176,120,0,0.08)', borderRadius: '8px', border: '1px solid rgba(176,120,0,0.2)' }}>
+              <span style={{ fontSize: '24px' }}>🎲</span>
+              <div>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#B07800', marginBottom: '2px' }}>Sorteo entre el 2.º y el 10.º del ranking de asistencias</div>
+                <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--azul-marino)' }}>Juan Carlos</div>
+                <div style={{ fontSize: '13px', color: '#666', marginTop: '2px' }}>🎁 100% descuento en la cuota 2026-27</div>
+              </div>
+            </div>
+          </div>
+          <p style={{ textAlign: 'center', fontSize: '14px', marginTop: '16px', color: 'var(--azul-marino)' }}>
+            👏 ¡Enhorabuena a los premiados! 💙
+          </p>
+        </div>
+      )}
+
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap' }}>
         {[
