@@ -336,12 +336,10 @@ export default async function Home() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
               {premiosHome.premios.map((p, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: 'var(--azul-palido)', borderRadius: '8px', border: '1px solid var(--azul-claro)' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '11px', color: 'var(--azul-medio)', fontWeight: '600', textTransform: 'uppercase' }}>{p.categoria}</div>
-                    <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--azul-marino)' }}>{p.ganador}</div>
-                  </div>
-                  {p.descripcion && <div style={{ fontSize: '12px', color: '#666', textAlign: 'right' }}>🎁 {p.descripcion}</div>}
+                <div key={i} style={{ padding: '12px', backgroundColor: 'var(--azul-palido)', borderRadius: '8px', border: '1px solid var(--azul-claro)' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--azul-medio)', fontWeight: '600', textTransform: 'uppercase', marginBottom: '2px' }}>{p.categoria}</div>
+                  <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--azul-marino)', marginBottom: '4px' }}>{p.ganador}</div>
+                  {p.descripcion && <div style={{ fontSize: '12px', color: '#666' }}>🎁 {p.descripcion}</div>}
                 </div>
               ))}
             </div>
