@@ -95,7 +95,7 @@ export default function Asociacion() {
             { titulo: 'Cuota anual', texto: 'La cuota de socio es de 60€ por temporada (septiembre a julio).' },
             { titulo: 'Asistencia', texto: 'El compromiso mínimo es de 15 entrenamientos por temporada.' },
             { titulo: 'Penalización', texto: 'Apuntarse a un entreno y no asistir sin avisar resta una asistencia del total.' },
-            { titulo: 'Premio asistencia', texto: 'El socio con mayor asistencia al finalizar la temporada recibe un premio. Entre los puestos 2 al 10 se realiza un sorteo.' },
+            { titulo: 'Premios de asistencia', texto: '🥇 Mayor asistencia: el socio con mayor asistencia a entrenos y eventos al finalizar la temporada recibe un premio especial.\n\n🎲 Sorteo: entre los clasificados del 2.º al 10.º puesto del ranking final de asistencias se realiza un sorteo con un segundo premio.\n\nEl valor de ambos premios puede variar cada temporada.' },
           ].map((r, i) => (
             <div key={r.titulo} style={{
               display: 'flex', gap: '12px', padding: '12px 0',
@@ -116,7 +116,7 @@ export default function Asociacion() {
         </div>
       </div>
 
-      {/* Redes sociales */}
+     {/* Redes sociales */}
       <div style={{ marginBottom: '40px' }}>
         <h2 style={{ color: 'var(--azul-marino)', fontSize: '20px', fontWeight: '600', marginBottom: '16px', paddingBottom: '8px', borderBottom: '2px solid var(--azul-claro)' }}>
           📱 Síguenos
