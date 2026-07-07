@@ -208,8 +208,8 @@ export default async function Home() {
           <h1 style={{ color: 'var(--blanco)', fontSize: 'clamp(20px, 5vw, 32px)', fontWeight: '700', lineHeight: '1.2', marginBottom: '12px', textShadow: '0 2px 8px rgba(0,0,0,0.7)' }}>
             Asociación de Fútbol<br />Veteranos de Nerja
           </h1>
-          <p style={{ color: 'white', fontSize: 'clamp(12px, 3vw, 15px)', textShadow: '0 1px 6px rgba(0,0,0,0.7)', opacity: 0.9 }}>
-            Pasión, compromiso y comunidad · Axarquía - Costa del Sol
+          <p style={{ color: 'white', fontSize: 'clamp(12px, 3vw, 15px)', textShadow: '0 1px 6px rgba(0,0,0,0.7)', opacity: 0.9, fontStyle: 'italic' }}>
+            Pasión, compromiso y comunidad
           </p>
         </div>
          
