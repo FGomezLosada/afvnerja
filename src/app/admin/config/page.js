@@ -182,6 +182,36 @@ export default function AdminConfig() {
   }
 
   async function activarTemporada(id) {
+    // Calcular saldo de la temporada activa actual antes de desactivarla
+    const tempActual = temporadas.find(t => t.activa)
+    if (tempActual) {
+      const { data: cuotasActual } = await supabase
+        .from('cuotas')
+        .select('importe_pagado')
+        .eq('temporada_id', tempActual.id)
+        .in('estado', ['pagado', 'parcial'])
+
+      const { data: gastosActual } = await supabase
+        .from('gastos')
+        .select('importe')
+        .eq('temporada_id', tempActual.id)
+
+      const totalCuotas = cuotasActual?.reduce((sum, c) => sum + (c.importe_pagado || 0), 0) || 0
+      const totalGastos = gastosActual?.reduce((sum, g) => sum + (g.importe || 0), 0) || 0
+      const saldo = totalCuotas - totalGastos
+
+      if (saldo !== 0) {
+        await supabase.from('gastos').insert({
+          temporada_id: id,
+          concepto: `Saldo arrastrado temporada ${tempActual.nombre}`,
+          importe: saldo > 0 ? -saldo : Math.abs(saldo),
+          categoria: 'tesoreria',
+          fecha: new Date().toISOString().split('T')[0],
+          reembolsado: false,
+          pagado_por: 'Sistema',
+        })
+      }
+    }
     if (!confirm('¿Activar esta temporada? La temporada actual quedará como histórico.')) return
     await supabase.from('temporadas').update({ activa: false }).neq('id', id)
     await supabase.from('temporadas').update({ activa: true }).eq('id', id)

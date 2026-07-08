@@ -256,7 +256,7 @@ export default function Dashboard() {
           </div>
         </div>
         <p style={{ fontSize: '11px', color: '#999', marginTop: '12px' }}>
-          * Para registrar ingresos extras (subvenciones, donaciones...) ve a "Gestionar gastos/ingresos" e introduce el importe en negativo.
+          * Los ingresos extras (subvenciones, donaciones...) se registran en "Gestionar gastos/ingresos" con importe negativo. Al activar una nueva temporada, el saldo arrastrado de la anterior se añade automáticamente como concepto de tesorería.
         </p>
       </div>
 

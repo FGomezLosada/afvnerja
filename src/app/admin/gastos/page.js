@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
-const categoriaOpciones = ['arbitro', 'equipacion', 'comida', 'viaje', 'instalaciones', 'otros']
+const categoriaOpciones = ['arbitro', 'equipacion', 'comida', 'viaje', 'instalaciones', 'tesoreria', 'otros']
 
 export default function AdminGastos() {
   const [gastos, setGastos] = useState([])
