@@ -165,6 +165,25 @@ export default async function Home() {
   const chartWidth = padLeft + evolucionMensual.length * (barWidth + gap) + 10
   const yObjetivo = chartHeight - padBottom - (OBJETIVO_ASISTENCIA / maxValor) * (chartHeight - padBottom - padTop)
 
+  const hoyDate = new Date()
+  const mesCumple = String(hoyDate.getMonth() + 1).padStart(2, '0')
+  const diaCumple = String(hoyDate.getDate()).padStart(2, '0')
+
+  const { data: todosSociosCumple } = await supabase
+    .from('socios')
+    .select('nombre_completo, apodo, fecha_nacimiento, foto_url')
+    .eq('activo', true)
+    .not('fecha_nacimiento', 'is', null)
+
+  const cumpleaneros = (todosSociosCumple || []).filter(s => {
+    const fn = s.fecha_nacimiento
+    return fn && fn.slice(5, 7) === mesCumple && fn.slice(8, 10) === diaCumple
+  }).map(s => ({
+    nombre: s.apodo || s.nombre_completo,
+    años: hoyDate.getFullYear() - new Date(s.fecha_nacimiento).getFullYear(),
+    foto: s.foto_url,
+  }))
+
   const { data: premiosHome } = await supabase
     .from('premios_temporada')
     .select('*')
@@ -258,6 +277,41 @@ export default async function Home() {
             ))}
           </div>
         </div>
+
+        {/* CUMPLEAÑOS */}
+        {cumpleaneros.length > 0 && (
+          <div style={{
+            backgroundColor: 'var(--blanco)',
+            border: '2px solid var(--naranja)',
+            borderRadius: '12px',
+            padding: '20px',
+            gridColumn: '1 / -1',
+            background: 'linear-gradient(135deg, #fff8f0, #fff3e6)',
+          }}>
+            <h2 style={{ color: 'var(--naranja)', fontSize: '16px', fontWeight: '700', marginBottom: '16px', textAlign: 'center' }}>
+              🎂 ¡Hoy es el cumpleaños de...!
+            </h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', justifyContent: 'center' }}>
+              {cumpleaneros.map((s, i) => (
+                <div key={i} style={{ textAlign: 'center', minWidth: '100px' }}>
+                  {s.foto ? (
+                    <img src={s.foto.split('?')[0]} alt={s.nombre}
+                      style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--naranja)', marginBottom: '8px' }} />
+                  ) : (
+                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'var(--azul-palido)', border: '3px solid var(--naranja)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', margin: '0 auto 8px' }}>
+                      👤
+                    </div>
+                  )}
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--azul-marino)' }}>{s.nombre}</div>
+                  <div style={{ fontSize: '13px', color: 'var(--naranja)', fontWeight: '600' }}>🎉 {s.años} años</div>
+                </div>
+              ))}
+            </div>
+            <p style={{ textAlign: 'center', fontSize: '13px', color: 'var(--naranja)', fontWeight: '600', marginTop: '16px' }}>
+              ¡Muchas felicidades! 💙
+            </p>
+          </div>
+        )}
 
         {/* GRÁFICO EVOLUCIÓN MEDIA ASISTENCIA */}
         <div style={{
