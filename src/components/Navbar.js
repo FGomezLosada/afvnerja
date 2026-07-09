@@ -12,6 +12,7 @@ const links = [
   { href: '/equipaciones', label: 'Equipaciones' },
   { href: '/asociacion', label: 'La Asociación' },
   { href: '/historico', label: 'Histórico' },
+  { href: '/mundo-afv', label: '🌍 Mundo AFV' },
 ]
 
 export default function Navbar() {

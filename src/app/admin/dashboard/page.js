@@ -314,6 +314,7 @@ export default function Dashboard() {
           { label: 'Gestionar cuotas', icono: '💰', href: '/admin/cuotas', desc: 'Estado de pagos por socio' },
           { label: 'Gestionar gastos/ingresos', icono: '💸', href: '/admin/gastos', desc: 'Registro económico de la asociación' },
           { label: 'Patrocinadores', icono: '🏢', href: '/admin/patrocinadores', desc: 'Logos y datos de patrocinadores' },
+          { label: 'Expediciones', icono: '🌍', href: '/admin/expediciones', desc: 'Gestionar el Mundo AFV' },
           { label: 'Configuración', icono: '⚙️', href: '/admin/config', desc: 'Temporadas y ajustes' },
         ].map(accion => (
           <a key={accion.href} href={accion.href} style={{
