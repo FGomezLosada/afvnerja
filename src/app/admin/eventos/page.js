@@ -42,6 +42,9 @@ export default function AdminEventos() {
     min_jugadores: 14,
     lista_entreno_activa: false,
     torneo_id: '',
+    es_desplazamiento: false,
+    latitud: '',
+    longitud: '',
   })
 
   useEffect(() => {
@@ -94,6 +97,9 @@ export default function AdminEventos() {
       min_jugadores: evento.min_jugadores || 14,
       lista_entreno_activa: evento.lista_entreno_activa ?? false,
       torneo_id: evento.torneo_id || '',
+      es_desplazamiento: evento.es_desplazamiento ?? false,
+      latitud: evento.latitud ? String(evento.latitud) : '',
+      longitud: evento.longitud ? String(evento.longitud) : '',
     })
     setEventoEditando(evento.id)
     setMostrarForm(true)
@@ -146,6 +152,29 @@ export default function AdminEventos() {
     if (error) {
       setMensaje('Error: ' + error.message)
     } else {
+      // Gestionar expedición vinculada
+      const eventoId = eventoEditando || (await supabase.from('eventos').select('id').eq('fecha', form.fecha).eq('tipo', form.tipo).order('created_at', { ascending: false }).limit(1).single()).data?.id
+
+      if (form.es_desplazamiento && form.latitud && form.longitud && eventoId) {
+        const datosExp = {
+          titulo: form.titulo || `${form.tipo} · ${form.lugar || ''}`,
+          lugar: form.lugar || '',
+          fecha: form.fecha,
+          tipo: form.tipo,
+          latitud: parseFloat(form.latitud),
+          longitud: parseFloat(form.longitud),
+          evento_id: eventoId,
+        }
+        const { data: expExistente } = await supabase.from('expediciones').select('id').eq('evento_id', eventoId).single()
+        if (expExistente) {
+          await supabase.from('expediciones').update(datosExp).eq('id', expExistente.id)
+        } else {
+          await supabase.from('expediciones').insert(datosExp)
+        }
+      } else if (!form.es_desplazamiento && eventoId) {
+        await supabase.from('expediciones').delete().eq('evento_id', eventoId)
+      }
+
       setMensaje(eventoEditando ? '✅ Evento actualizado' : '✅ Evento creado')
       resetForm()
       setMostrarForm(false)
@@ -286,7 +315,30 @@ export default function AdminEventos() {
                 <input type="checkbox" checked={form.lista_entreno_activa} onChange={e => setForm({ ...form, lista_entreno_activa: e.target.checked })} />
                 Lista de apunte activa
               </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.es_desplazamiento} onChange={e => setForm({ ...form, es_desplazamiento: e.target.checked })} />
+                📍 Desplazamiento fuera de Nerja
+              </label>
             </div>
+            {form.es_desplazamiento && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px', padding: '12px', backgroundColor: 'var(--azul-palido)', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--azul-marino)' }}>Latitud *</label>
+                  <input type="text" placeholder="ej: 37.3886" value={form.latitud}
+                    onChange={e => setForm({ ...form, latitud: e.target.value })}
+                    style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--azul-claro)', fontSize: '13px' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--azul-marino)' }}>Longitud *</label>
+                  <input type="text" placeholder="ej: -5.9823" value={form.longitud}
+                    onChange={e => setForm({ ...form, longitud: e.target.value })}
+                    style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--azul-claro)', fontSize: '13px' }} />
+                </div>
+                <p style={{ fontSize: '11px', color: '#888', gridColumn: '1/-1', margin: 0 }}>
+                  💡 Google Maps → clic derecho en la ciudad → copia los dos números (latitud, longitud)
+                </p>
+              </div>
+            )}
             <button type="submit" disabled={guardando} style={{
               padding: '10px 24px', backgroundColor: 'var(--azul-marino)', color: 'white',
               border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer',
