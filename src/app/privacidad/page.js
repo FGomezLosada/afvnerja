@@ -16,9 +16,9 @@ export default function Privacidad() {
         </h2>
         <p style={{ fontSize: '14px', color: '#333', lineHeight: '1.7' }}>
           <strong>Nombre:</strong> Asociación de Fútbol Veteranos de Nerja (A.F.V. Nerja)<br />
-          <strong>NIF/CIF:</strong> [PENDIENTE: incluir NIF de la asociación]<br />
-          <strong>Dirección:</strong> [PENDIENTE: incluir dirección de la sede social]<br />
-          <strong>Email de contacto:</strong> [PENDIENTE: incluir email de contacto]<br />
+          <strong>NIF/CIF:</strong> G93161594<br />
+          <strong>Dirección:</strong> Calle Chaparil, 12, Local Bajo, 29780 Nerja (Málaga)<br />
+          <strong>Email de contacto:</strong> <a href="mailto:vetfcnerja@gmail.com" style={{ color: 'var(--azul-medio)' }}>vetfcnerja@gmail.com</a><br />
           <strong>Web:</strong> https://afvnerja.vercel.app
         </p>
       </div>
