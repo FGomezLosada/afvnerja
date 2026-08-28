@@ -21,18 +21,20 @@ export default async function Home() {
   const [
     { count: sociosActivos },
     { data: eventosTemporada },
-    { data: asistenciasTemporada },
+    { data: asistenciasTemporadaRaw },
     { data: eventosBenefico },
   ] = await Promise.all([
     supabase.from('socios').select('*', { count: 'exact', head: true }).eq('activo', true),
     supabase.from('eventos').select('id, tipo, estado, fecha').eq('temporada_id', tempId),
-    supabase.from('asistencias').select('id, evento_id, estado').eq('estado', 'asistio'),
+    supabase.from('asistencias').select('id, evento_id, estado').eq('estado', 'asistio').in('evento_id', (await supabase.from('eventos').select('id').eq('temporada_id', tempId)).data?.map(e => e.id) || []),
     supabase.from('eventos').select('recaudacion_benefica').eq('temporada_id', tempId).eq('es_benefico', true),
   ])
 
-  const entronosFinalizados = eventosTemporada?.filter(e => e.tipo === 'entreno' && e.estado !== 'cancelado').length || 0
+  const entronosFinalizados = eventosTemporada?.filter(e => e.tipo === 'entreno' && e.estado === 'jugado').length || 0
   const entrenosAnulados = eventosTemporada?.filter(e => e.tipo === 'entreno' && e.estado === 'cancelado').length || 0
   const hoy = new Date().toISOString().split('T')[0]
+  const eventoIdsTemporada = eventosTemporada?.map(e => e.id) || []
+  const asistenciasTemporada = asistenciasTemporadaRaw?.filter(a => eventoIdsTemporada.includes(a.evento_id)) || []
   const partidosTemp = eventosTemporada?.filter(e => e.tipo === 'partido' && e.estado !== 'cancelado' && (e.estado === 'jugado' || e.fecha < hoy)).length || 0
   const torneosTemp = eventosTemporada?.filter(e => e.tipo === 'torneo' && e.estado !== 'cancelado' && (e.estado === 'jugado' || e.fecha < hoy)).length || 0
   const eventoIdsTemp = eventosTemporada?.map(e => e.id) || []
@@ -70,6 +72,7 @@ export default async function Home() {
     .from('asistencias')
     .select('socio_id, estado, socios(nombre_completo, apodo)')
     .in('estado', ['asistio', 'no_aparecio'])
+    .in('evento_id', eventoIdsTemporada)
 
   const ranking = {}
   if (asistencias) {

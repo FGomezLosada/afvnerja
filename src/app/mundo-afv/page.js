@@ -137,6 +137,10 @@ export default function MundoAFV() {
       </div>
 
       {/* Mapa */}
+      <style>{`
+        #mapa-afv { z-index: 0; position: relative; }
+        @media (max-width: 600px) { #mapa-afv { height: 380px !important; } }
+      `}</style>
       <div id="mapa-afv" style={{
         width: '100%', height: '550px', borderRadius: '12px',
         border: '1px solid var(--azul-claro)',

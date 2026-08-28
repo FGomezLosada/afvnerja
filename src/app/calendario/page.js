@@ -16,22 +16,34 @@ export default function Calendario() {
   const [eventos, setEventos] = useState([])
   const [loading, setLoading] = useState(true)
   const [filtro, setFiltro] = useState('todos')
+  const [ordenAsc, setOrdenAsc] = useState(true)
 
   useEffect(() => {
     async function cargar() {
+      const { data: temporada } = await supabase
+        .from('temporadas')
+        .select('id')
+        .eq('activa', true)
+        .single()
+
       const { data } = await supabase
         .from('eventos')
         .select('*')
-        .order('fecha', { ascending: false })
+        .eq('temporada_id', temporada?.id)
+        .order('fecha', { ascending: true })
       setEventos(data || [])
       setLoading(false)
     }
     cargar()
   }, [])
 
-  const eventosFiltrados = filtro === 'todos'
+  const eventosFiltrados = (filtro === 'todos'
     ? eventos
     : eventos.filter(e => e.tipo === filtro)
+  ).sort((a, b) => ordenAsc
+    ? a.fecha.localeCompare(b.fecha)
+    : b.fecha.localeCompare(a.fecha)
+  )
 
   // Agrupar por mes
   const meses = {}
@@ -58,7 +70,14 @@ export default function Calendario() {
       </p>
 
       {/* Filtros */}
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '28px' }}>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '28px', alignItems: 'center' }}>
+          <button onClick={() => setOrdenAsc(!ordenAsc)} style={{
+            padding: '6px 14px', fontSize: '12px', borderRadius: '20px', cursor: 'pointer',
+            backgroundColor: 'var(--azul-marino)', color: 'white',
+            border: '1px solid var(--azul-marino)', fontWeight: '600',
+          }}>
+            {ordenAsc ? '↑ Más antiguos primero' : '↓ Más recientes primero'}
+          </button>
         <button onClick={() => setFiltro('todos')} style={{
           padding: '7px 14px', fontSize: '12px', borderRadius: '20px', cursor: 'pointer',
           backgroundColor: filtro === 'todos' ? 'var(--azul-marino)' : 'var(--azul-palido)',

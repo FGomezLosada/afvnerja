@@ -57,8 +57,14 @@ export default function AdminEventos() {
   }, [])
 
   async function cargarEventos() {
+    const { data: temporada } = await supabase
+      .from('temporadas')
+      .select('id')
+      .eq('activa', true)
+      .single()
+
     const [{ data: ev }, { data: soc }] = await Promise.all([
-      supabase.from('eventos').select('*').order('fecha', { ascending: false }),
+      supabase.from('eventos').select('*').eq('temporada_id', temporada?.id).order('fecha', { ascending: false }),
       supabase.from('socios').select('id, apodo, nombre_completo').eq('activo', true).order('apodo'),
     ])
     setEventos(ev || [])
