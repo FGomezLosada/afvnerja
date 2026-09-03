@@ -19,8 +19,11 @@ export default function AdminAsistencias() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/admin'); return }
 
+      const { data: tempActiva } = await supabase
+        .from('temporadas').select('id').eq('activa', true).single()
+
       const [{ data: ev }, { data: so }] = await Promise.all([
-        supabase.from('eventos').select('*').order('fecha', { ascending: false }),
+        supabase.from('eventos').select('*').eq('temporada_id', tempActiva?.id).order('fecha', { ascending: false }),
         supabase.from('socios').select('*').eq('activo', true).order('apodo'),
       ])
       setEventos(ev || [])

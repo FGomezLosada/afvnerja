@@ -12,7 +12,7 @@ export default async function Home() {
 
   const { data: temporadaActiva } = await supabase
     .from('temporadas')
-    .select('id')
+    .select('id, nombre')
     .eq('activa', true)
     .single()
 
@@ -225,7 +225,7 @@ export default async function Home() {
       }}>
         <div style={{ maxWidth: '600px' }}>
           <div style={{ color: 'white', fontSize: '13px', marginBottom: '8px', fontWeight: '600', textShadow: '0 1px 4px rgba(0,0,0,0.6)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-            Temporada 2025-26
+            Temporada {temporadaActiva?.nombre}
           </div>
           <h1 style={{ color: 'var(--blanco)', fontSize: 'clamp(20px, 5vw, 32px)', fontWeight: '700', lineHeight: '1.2', marginBottom: '12px', textShadow: '0 2px 8px rgba(0,0,0,0.7)' }}>
             Asociación de Fútbol<br />Veteranos de Nerja
