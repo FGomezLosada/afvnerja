@@ -356,6 +356,19 @@ export default function DetalleEvento() {
             </div>
           )}
 
+          {esAdmin && (
+            <button onClick={() => {
+              navigator.clipboard.writeText(window.location.href)
+              alert('✅ Enlace copiado al portapapeles')
+            }} style={{
+              padding: '8px 16px', backgroundColor: 'transparent', color: 'var(--azul-medio)',
+              border: '1px solid var(--azul-claro)', borderRadius: '8px', fontSize: '12px',
+              cursor: 'pointer', marginTop: '12px', display: 'block', width: '100%',
+            }}>
+              📋 Copiar enlace de la lista
+            </button>
+          )}
+
           {esAdmin && apuntados.length >= 2 && (
             <div style={{ display: 'flex', gap: '8px', marginTop: '20px' }}>
               <button onClick={generarEquipos} style={{

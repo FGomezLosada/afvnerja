@@ -22,6 +22,7 @@ export default function AdminEventos() {
   const [nuevoGolNotas, setNuevoGolNotas] = useState('')
   const [socios, setSocios] = useState([])
   const [filtroTipo, setFiltroTipo] = useState('todos')
+  const [ordenAsc, setOrdenAsc] = useState(false)
   const router = useRouter()
 
   const [form, setForm] = useState({
@@ -423,7 +424,14 @@ export default function AdminEventos() {
       )}
 
       {/* Filtro por tipo */}
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px', alignItems: 'center' }}>
+        <button onClick={() => setOrdenAsc(!ordenAsc)} style={{
+          padding: '6px 14px', fontSize: '12px', borderRadius: '20px', cursor: 'pointer',
+          backgroundColor: 'var(--azul-marino)', color: 'white',
+          border: '1px solid var(--azul-marino)', fontWeight: '600',
+        }}>
+          {ordenAsc ? '↑ Más antiguos primero' : '↓ Más recientes primero'}
+        </button>
         {['todos', 'entreno', 'partido', 'torneo', 'viaje', 'social', 'benefico'].map(tipo => (
           <button key={tipo} onClick={() => setFiltroTipo(tipo)} style={{
             padding: '6px 14px', fontSize: '12px', borderRadius: '20px', cursor: 'pointer',
@@ -440,7 +448,10 @@ export default function AdminEventos() {
 
       {/* Lista de eventos */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {eventos.filter(e => filtroTipo === 'todos' || e.tipo === filtroTipo).map(evento => {
+        {[...eventos]
+          .filter(e => filtroTipo === 'todos' || e.tipo === filtroTipo)
+          .sort((a, b) => ordenAsc ? a.fecha.localeCompare(b.fecha) : b.fecha.localeCompare(a.fecha))
+          .map(evento => {
           const fecha = new Date(evento.fecha + 'T12:00:00')
           const fechaStr = fecha.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
           return (
