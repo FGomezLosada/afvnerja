@@ -225,7 +225,7 @@ export default async function Home() {
       }}>
         <div style={{ maxWidth: '600px' }}>
           <div style={{ color: 'white', fontSize: '13px', marginBottom: '8px', fontWeight: '600', textShadow: '0 1px 4px rgba(0,0,0,0.6)', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-            Temporada {temporadaActiva?.nombre}
+            {temporadaActiva?.nombre}
           </div>
           <h1 style={{ color: 'var(--blanco)', fontSize: 'clamp(20px, 5vw, 32px)', fontWeight: '700', lineHeight: '1.2', marginBottom: '12px', textShadow: '0 2px 8px rgba(0,0,0,0.7)' }}>
             Asociación de Fútbol<br />Veteranos de Nerja
@@ -299,7 +299,7 @@ export default async function Home() {
                 <div key={i} style={{ textAlign: 'center', minWidth: '100px' }}>
                   {s.foto ? (
                     <img src={s.foto.split('?')[0]} alt={s.nombre}
-                      style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--naranja)', marginBottom: '8px' }} />
+                      style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', objectPosition: 'top', border: '3px solid var(--naranja)', marginBottom: '8px' }} />
                   ) : (
                     <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'var(--azul-palido)', border: '3px solid var(--naranja)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', margin: '0 auto 8px' }}>
                       👤
