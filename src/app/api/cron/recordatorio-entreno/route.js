@@ -22,7 +22,7 @@ export async function GET() {
   const aEnviar = (eventos || []).filter(evento => {
     const dias = diasHasta(evento.fecha)
     if (evento.tipo === 'entreno') {
-      return dias === 1
+      return dias === 2 || dias === 1
     }
     return dias === 10 || dias === 5 || dias === 1
   })
@@ -44,8 +44,10 @@ export async function GET() {
     const [año, mes, dia] = evento.fecha.split('-')
     const fechaFormateada = `${dia}-${mes}-${año}`
     const etiquetaTipo = evento.tipo === 'entreno' ? 'entreno' : evento.tipo === 'partido' ? 'partido' : 'torneo'
+    const diasRestantes = diasHasta(evento.fecha)
+    const avisoExtra = evento.tipo === 'entreno' && diasRestantes === 2 ? '\n🔔 ¡La lista ya está abierta, apúntate!' : evento.tipo === 'entreno' && diasRestantes === 1 ? '\n⏰ ¡Último aviso, quedan 24h!' : ''
 
-    const mensaje = `🔔 Recordatorio de ${etiquetaTipo}\n📅 ${fechaFormateada} a las ${evento.hora || ''} · ${evento.lugar || evento.titulo || ''}\n👥 Apuntados: ${count || 0}${evento.min_jugadores ? ` / mínimo ${evento.min_jugadores}` : ''}\n👉 Apúntate aquí: https://afvnerja.vercel.app/eventos/${evento.id}`
+    const mensaje = `🔔 Recordatorio de ${etiquetaTipo}\n📅 ${fechaFormateada} a las ${evento.hora || ''} · ${evento.lugar || evento.titulo || ''}\n👥 Apuntados: ${count || 0}${evento.min_jugadores ? ` / mínimo ${evento.min_jugadores}` : ''}${avisoExtra}\n👉 Apúntate aquí: https://afvnerja.vercel.app/eventos/${evento.id}`
 
     await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
