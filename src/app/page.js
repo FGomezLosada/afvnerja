@@ -57,7 +57,8 @@ export default async function Home() {
 
   const { data: golesData } = await supabase
     .from('goles')
-    .select('cantidad, socios(apodo, nombre_completo)')
+    .select('cantidad, socios(apodo, nombre_completo), evento_id')
+    .in('evento_id', eventoIdsTemporada)
 
   const rankingGoles = {}
   golesData?.forEach(g => {
