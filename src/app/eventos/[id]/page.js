@@ -20,6 +20,7 @@ export default function DetalleEvento() {
   const [esAdmin, setEsAdmin] = useState(false)
   const [nombreInvitado, setNombreInvitado] = useState('')
   const [posicionInvitado, setPosicionInvitado] = useState('')
+  const [numEquipos, setNumEquipos] = useState(2)
 
   useEffect(() => {
     async function cargar() {
@@ -182,28 +183,19 @@ export default function DetalleEvento() {
       posicion: a.es_invitado ? (a.posicion_invitado || null) : (a.socios?.posiciones?.[0] || a.socios?.posicion || null),
     })))
 
-    const equipoA = []
-    const equipoB = []
-    let turno = 0
-
-    // Ordenar por posición para repartir uno a uno equilibrando totales
     const orden = ['portero', 'defensa', 'centrocampista', 'delantero', null]
     const agrupados = orden.flatMap(pos => jugadores.filter(j => j.posicion === pos))
 
-    agrupados.forEach(jugador => {
-      if (equipoA.length < equipoB.length) {
-        equipoA.push(jugador)
-      } else if (equipoB.length < equipoA.length) {
-        equipoB.push(jugador)
-      } else {
-        // empatados, alterna
-        if (turno % 2 === 0) equipoA.push(jugador)
-        else equipoB.push(jugador)
-        turno++
-      }
+    const equipos = Array.from({ length: numEquipos }, () => [])
+    agrupados.forEach((jugador, i) => {
+      equipos[i % numEquipos].push(jugador)
     })
 
-    const nuevosEquipos = { equipoA, equipoB, generadoEn: new Date().toISOString() }
+    const nuevosEquipos = {
+      lista: equipos,
+      numEquipos,
+      generadoEn: new Date().toISOString()
+    }
 
     await supabase.from('eventos').update({ equipos_generados: nuevosEquipos }).eq('id', id)
     setEvento(prev => ({ ...prev, equipos_generados: nuevosEquipos }))
@@ -370,48 +362,64 @@ export default function DetalleEvento() {
           )}
 
           {esAdmin && apuntados.length >= 2 && (
-            <div style={{ display: 'flex', gap: '8px', marginTop: '20px' }}>
-              <button onClick={generarEquipos} style={{
-                flex: 1, padding: '14px',
-                backgroundColor: 'var(--azul-marino)', color: 'white',
-                border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
-              }}>
-                🎲 {equipos ? 'Regenerar equipos' : 'Formar equipos aleatoriamente'}
-              </button>
-              {equipos && (
-                <button onClick={borrarEquipos} style={{
-                  padding: '14px 20px',
-                  backgroundColor: '#FEE2E2', color: '#C92F2F',
-                  border: '1px solid #FCA5A5', borderRadius: '10px', fontSize: '13px', cursor: 'pointer',
+            <div style={{ marginTop: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '13px', color: 'var(--azul-medio)', fontWeight: '600' }}>Nº de equipos:</span>
+                {[2, 3, 4].map(n => (
+                  <button key={n} onClick={() => setNumEquipos(n)} style={{
+                    padding: '6px 14px', fontSize: '13px', borderRadius: '20px', cursor: 'pointer',
+                    backgroundColor: numEquipos === n ? 'var(--azul-marino)' : 'var(--azul-palido)',
+                    color: numEquipos === n ? 'white' : 'var(--azul-medio)',
+                    border: `1px solid ${numEquipos === n ? 'var(--azul-marino)' : 'var(--azul-claro)'}`,
+                    fontWeight: numEquipos === n ? '600' : '400',
+                  }}>
+                    {n}
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button onClick={generarEquipos} style={{
+                  flex: 1, padding: '14px',
+                  backgroundColor: 'var(--azul-marino)', color: 'white',
+                  border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
                 }}>
-                  Borrar
+                  🎲 {equipos ? `Regenerar ${numEquipos} equipos` : `Formar ${numEquipos} equipos aleatorios`}
                 </button>
-              )}
+                {equipos && (
+                  <button onClick={borrarEquipos} style={{
+                    padding: '14px 20px',
+                    backgroundColor: '#FEE2E2', color: '#C92F2F',
+                    border: '1px solid #FCA5A5', borderRadius: '10px', fontSize: '13px', cursor: 'pointer',
+                  }}>
+                    Borrar
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
-          {equipos && (
-            <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div style={{ backgroundColor: '#E6F1FB', borderRadius: '12px', padding: '14px' }}>
-                <div style={{ textAlign: 'center', fontSize: '13px', fontWeight: '700', color: '#185FA5', marginBottom: '10px' }}>
-                  🔵 Equipo A ({equipos.equipoA.length})
-                </div>
-                {equipos.equipoA.map((j, i) => (
-                  <div key={i} style={{ fontSize: '12px', color: '#185FA5', padding: '4px 0', borderBottom: i < equipos.equipoA.length - 1 ? '1px solid rgba(24,95,165,0.15)' : 'none' }}>
-                    {posicionIcon[j.posicion] || '⚽'} {j.nombre}
+          {equipos && equipos.lista && (
+            <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: equipos.lista.length <= 2 ? '1fr 1fr' : 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+              {equipos.lista.map((equipo, ei) => {
+                const config = [
+                  { bg: '#E6F1FB', color: '#185FA5', icono: '🔵', nombre: 'Equipo A' },
+                  { bg: '#FEF2E8', color: '#993C1D', icono: '🟠', nombre: 'Equipo B' },
+                  { bg: '#E8F8F2', color: '#1D9E75', icono: '🟢', nombre: 'Equipo C' },
+                  { bg: '#F3E8FF', color: '#7C3AED', icono: '🟣', nombre: 'Equipo D' },
+                ][ei] || { bg: 'var(--azul-palido)', color: 'var(--azul-marino)', icono: '⚽', nombre: `Equipo ${ei + 1}` }
+                return (
+                  <div key={ei} style={{ backgroundColor: config.bg, borderRadius: '12px', padding: '14px' }}>
+                    <div style={{ textAlign: 'center', fontSize: '13px', fontWeight: '700', color: config.color, marginBottom: '10px' }}>
+                      {config.icono} {config.nombre} ({equipo.length})
+                    </div>
+                    {equipo.map((j, i) => (
+                      <div key={i} style={{ fontSize: '12px', color: config.color, padding: '4px 0', borderBottom: i < equipo.length - 1 ? `1px solid ${config.color}22` : 'none' }}>
+                        {posicionIcon[j.posicion] || '⚽'} {j.nombre}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              <div style={{ backgroundColor: '#FEF2E8', borderRadius: '12px', padding: '14px' }}>
-                <div style={{ textAlign: 'center', fontSize: '13px', fontWeight: '700', color: '#993C1D', marginBottom: '10px' }}>
-                  🟠 Equipo B ({equipos.equipoB.length})
-                </div>
-                {equipos.equipoB.map((j, i) => (
-                  <div key={i} style={{ fontSize: '12px', color: '#993C1D', padding: '4px 0', borderBottom: i < equipos.equipoB.length - 1 ? '1px solid rgba(153,60,29,0.15)' : 'none' }}>
-                    {posicionIcon[j.posicion] || '⚽'} {j.nombre}
-                  </div>
-                ))}
-              </div>
+                )
+              })}
             </div>
           )}
         </>
