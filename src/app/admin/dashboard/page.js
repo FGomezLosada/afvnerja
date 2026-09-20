@@ -125,9 +125,11 @@ export default function Dashboard() {
       .select('importe')
       .eq('temporada_id', tempId)
 
-    const totalGastos = gastos?.reduce((sum, g) => sum + (g.importe || 0), 0) || 0
+    const totalGastosReales = gastos?.filter(g => (g.importe || 0) > 0).reduce((sum, g) => sum + g.importe, 0) || 0
+    const totalOtrosIngresos = gastos?.filter(g => (g.importe || 0) < 0).reduce((sum, g) => sum + Math.abs(g.importe), 0) || 0
+    const saldo = totalCuotas + totalOtrosIngresos - totalGastosReales
 
-    setFinanciero({ totalCuotas, totalGastos, saldo: totalCuotas - totalGastos })
+    setFinanciero({ totalCuotas, totalGastosReales, totalOtrosIngresos, saldo })
   }
 
   async function handleTemporadaChange(tempId) {
@@ -158,7 +160,7 @@ export default function Dashboard() {
             Panel de Administración
           </h1>
           <p style={{ color: 'var(--azul-medio)', fontSize: '13px', marginTop: '4px' }}>
-            AFV Nerja — Temporada {tempActivaNombre}
+            AFV Nerja — {tempActivaNombre}
           </p>
         </div>
         <button onClick={handleLogout} style={{
@@ -190,7 +192,7 @@ export default function Dashboard() {
 
       {/* Eventos desglosados */}
       <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>
-        📅 Eventos — Temporada {tempActivaNombre}
+        📅 Eventos — {tempActivaNombre}
       </h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '28px' }}>
         {[
@@ -240,29 +242,33 @@ export default function Dashboard() {
           </select>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
-          <div style={{ backgroundColor: 'var(--azul-palido)', borderRadius: '10px', padding: '16px', textAlign: 'center' }}>
-            <div style={{ fontSize: '11px', color: 'var(--azul-medio)', marginBottom: '6px', fontWeight: '600' }}>INGRESOS (cuotas)</div>
+            <div style={{ backgroundColor: 'var(--azul-palido)', borderRadius: '10px', padding: '16px', textAlign: 'center' }}>
+            <div style={{ fontSize: '11px', color: 'var(--azul-medio)', marginBottom: '6px', fontWeight: '600' }}>💰 CUOTAS</div>
             <div style={{ fontSize: '22px', fontWeight: '700', color: '#1D9E75' }}>{financiero.totalCuotas?.toFixed(2)}€</div>
           </div>
           <div style={{ backgroundColor: 'var(--azul-palido)', borderRadius: '10px', padding: '16px', textAlign: 'center' }}>
-            <div style={{ fontSize: '11px', color: 'var(--azul-medio)', marginBottom: '6px', fontWeight: '600' }}>GASTOS</div>
-            <div style={{ fontSize: '22px', fontWeight: '700', color: 'var(--naranja)' }}>{financiero.totalGastos?.toFixed(2)}€</div>
+            <div style={{ fontSize: '11px', color: 'var(--azul-medio)', marginBottom: '6px', fontWeight: '600' }}>📈 OTROS INGRESOS</div>
+            <div style={{ fontSize: '22px', fontWeight: '700', color: '#1D9E75' }}>{financiero.totalOtrosIngresos?.toFixed(2)}€</div>
+          </div>
+          <div style={{ backgroundColor: 'var(--azul-palido)', borderRadius: '10px', padding: '16px', textAlign: 'center' }}>
+            <div style={{ fontSize: '11px', color: 'var(--azul-medio)', marginBottom: '6px', fontWeight: '600' }}>📉 GASTOS REALES</div>
+            <div style={{ fontSize: '22px', fontWeight: '700', color: 'var(--naranja)' }}>{financiero.totalGastosReales?.toFixed(2)}€</div>
           </div>
           <div style={{ backgroundColor: financiero.saldo >= 0 ? '#e8f8f2' : '#fef0e7', borderRadius: '10px', padding: '16px', textAlign: 'center', border: `1px solid ${financiero.saldo >= 0 ? '#1D9E75' : 'var(--naranja)'}` }}>
-            <div style={{ fontSize: '11px', color: 'var(--azul-medio)', marginBottom: '6px', fontWeight: '600' }}>SALDO</div>
+            <div style={{ fontSize: '11px', color: 'var(--azul-medio)', marginBottom: '6px', fontWeight: '600' }}>🏦 SALDO EN CAJA</div>
             <div style={{ fontSize: '22px', fontWeight: '700', color: financiero.saldo >= 0 ? '#1D9E75' : 'var(--naranja)' }}>
               {financiero.saldo >= 0 ? '+' : ''}{financiero.saldo?.toFixed(2)}€
             </div>
           </div>
         </div>
         <p style={{ fontSize: '11px', color: '#999', marginTop: '12px' }}>
-          * Los ingresos extras (subvenciones, donaciones...) se registran en "Gestionar gastos/ingresos" con importe negativo. Al activar una nueva temporada, el saldo arrastrado de la anterior se añade automáticamente como concepto de tesorería.
+          * Los ingresos extras (remanente, subvenciones, ventas...) se registran con importe negativo en "Gestionar gastos/ingresos" y aparecen en "Otros ingresos". El saldo en caja = Cuotas + Otros ingresos − Gastos reales.
         </p>
       </div>
 
       {/* Seguimiento de implicación */}
       <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>
-        📋 Seguimiento de implicación — Temporada
+        📋 Seguimiento de implicación — {tempActivaNombre}
       </h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '32px' }}>
 
@@ -314,6 +320,7 @@ export default function Dashboard() {
           { label: 'Gestionar cuotas', icono: '💰', href: '/admin/cuotas', desc: 'Estado de pagos por socio' },
           { label: 'Gestionar gastos/ingresos', icono: '💸', href: '/admin/gastos', desc: 'Registro económico de la asociación' },
           { label: 'Patrocinadores', icono: '🏢', href: '/admin/patrocinadores', desc: 'Logos y datos de patrocinadores' },
+          { label: 'Histórico financiero', icono: '💶', href: '/admin/historico-financiero', desc: 'Consultar gastos e ingresos por temporada' },
           { label: 'Expediciones', icono: '🌍', href: '/admin/expediciones', desc: 'Gestionar el Mundo AFV' },
           { label: 'Configuración', icono: '⚙️', href: '/admin/config', desc: 'Temporadas y ajustes' },
         ].map(accion => (
