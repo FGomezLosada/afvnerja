@@ -56,6 +56,10 @@ export default function AdminConfig() {
     dias_entreno: [],
     hora_entreno: '20:45',
     notas: '',
+    objetivo_media_asistencia: 18,
+    objetivo_socios: 20,
+    objetivo_benefico: 0,
+    objetivo_partidos_torneos: 5,
   }
   const [form, setForm] = useState(formInicial)
 
@@ -105,6 +109,10 @@ export default function AdminConfig() {
       dias_entreno: form.dias_entreno,
       hora_entreno: form.hora_entreno,
       notas: form.notas || null,
+      objetivo_media_asistencia: parseFloat(form.objetivo_media_asistencia) || 18,
+      objetivo_socios: parseInt(form.objetivo_socios) || 20,
+      objetivo_benefico: parseFloat(form.objetivo_benefico) || 0,
+      objetivo_partidos_torneos: parseInt(form.objetivo_partidos_torneos) || 5,
       activa: false,
     }).select().single()
 
@@ -258,6 +266,10 @@ export default function AdminConfig() {
                 { label: 'Cuota estándar (€)', key: 'cuota_importe', type: 'number' },
                 { label: 'Mínimo asistencias', key: 'min_asistencias', type: 'number' },
                 { label: 'Hora de entreno', key: 'hora_entreno', type: 'time' },
+                { label: '🎯 Objetivo media asistencia', key: 'objetivo_media_asistencia', type: 'number' },
+                { label: '🎯 Objetivo socios activos', key: 'objetivo_socios', type: 'number' },
+                { label: '🎯 Objetivo recaudado benéfico (€)', key: 'objetivo_benefico', type: 'number' },
+                { label: '🎯 Objetivo partidos + torneos', key: 'objetivo_partidos_torneos', type: 'number' },
               ].map(f => (
                 <div key={f.key} style={{ marginBottom: '14px' }}>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: 'var(--azul-marino)', marginBottom: '4px' }}>{f.label}</label>

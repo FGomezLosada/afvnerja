@@ -12,6 +12,7 @@ export default function Dashboard() {
   const [temporadaSeleccionada, setTemporadaSeleccionada] = useState(null)
   const [topNoAparecio, setTopNoAparecio] = useState([])
   const [topBorrados, setTopBorrados] = useState([])
+  const [historicoData, setHistoricoData] = useState([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
@@ -104,6 +105,58 @@ export default function Dashboard() {
       // Financiero de la temporada activa
       await cargarFinanciero(tempActiva?.id)
 
+      // Cargar datos históricos de todas las temporadas
+      const { data: todasTemps } = await supabase
+        .from('temporadas')
+        .select('id, nombre, activa, objetivo_media_asistencia, objetivo_socios, objetivo_benefico, objetivo_partidos_torneos')
+        .order('fecha_inicio', { ascending: true })
+
+      const historicoData = []
+      for (const temp of todasTemps || []) {
+        const { data: evTemp } = await supabase
+          .from('eventos')
+          .select('id, tipo, estado, cuenta_asistencia, recaudacion_benefica, es_benefico')
+          .eq('temporada_id', temp.id)
+
+        const entrenosJugados = evTemp?.filter(e => e.tipo === 'entreno' && e.estado === 'jugado') || []
+        const idsEntrenos = entrenosJugados.map(e => e.id)
+
+        let mediaAsistencia = 0
+        if (idsEntrenos.length > 0) {
+          const { data: asistTemp } = await supabase
+            .from('asistencias')
+            .select('evento_id')
+            .eq('estado', 'asistio')
+            .in('evento_id', idsEntrenos)
+          mediaAsistencia = idsEntrenos.length > 0
+            ? Math.round((asistTemp?.length || 0) / idsEntrenos.length * 10) / 10
+            : 0
+        }
+
+        const { count: sociosTemp } = await supabase
+          .from('socios')
+          .select('*', { count: 'exact', head: true })
+          .eq('activo', true)
+
+        const benefico = evTemp?.filter(e => e.es_benefico).reduce((sum, e) => sum + (e.recaudacion_benefica || 0), 0) || 0
+        const partidosTorneos = evTemp?.filter(e => (e.tipo === 'partido' || e.tipo === 'torneo') && e.estado === 'jugado').length || 0
+
+        historicoData.push({
+          nombre: temp.nombre,
+          activa: temp.activa,
+          mediaAsistencia,
+          socios: sociosTemp || 0,
+          benefico,
+          partidosTorneos,
+          objetivos: {
+            media: temp.objetivo_media_asistencia || 18,
+            socios: temp.objetivo_socios || 20,
+            benefico: temp.objetivo_benefico || 0,
+            partidosTorneos: temp.objetivo_partidos_torneos || 5,
+          }
+        })
+      }
+      setHistoricoData(historicoData)
       setLoading(false)
     }
     cargarDatos()
@@ -307,6 +360,82 @@ export default function Dashboard() {
         </div>
 
       </div>
+
+      {/* PANEL DE INDICADORES */}
+      {historicoData.length > 0 && (() => {
+        const actual = historicoData.find(t => t.activa)
+        if (!actual) return null
+        const indicadores = [
+          { label: '📊 Media asistencia', valor: actual.mediaAsistencia, objetivo: actual.objetivos.media, sufijo: '', decimales: 1 },
+          { label: '👥 Socios activos', valor: actual.socios, objetivo: actual.objetivos.socios, sufijo: '', decimales: 0 },
+          { label: '❤️ Recaudado benéfico', valor: actual.benefico, objetivo: actual.objetivos.benefico, sufijo: '€', decimales: 0 },
+          { label: '⚽ Partidos y torneos', valor: actual.partidosTorneos, objetivo: actual.objetivos.partidosTorneos, sufijo: '', decimales: 0 },
+        ]
+        return (
+          <div style={{ marginBottom: '32px' }}>
+            <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>
+              🎯 Objetivos — {actual.nombre || ''}
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+              {indicadores.map(ind => {
+                const pct = ind.objetivo > 0 ? Math.min(100, Math.round((ind.valor / ind.objetivo) * 100)) : 100
+                const color = pct >= 100 ? '#1D9E75' : pct >= 70 ? 'var(--naranja)' : '#C92F2F'
+                return (
+                  <div key={ind.label} style={{ backgroundColor: 'var(--blanco)', border: '1px solid var(--azul-claro)', borderRadius: '12px', padding: '16px' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--azul-medio)', fontWeight: '600', marginBottom: '8px' }}>{ind.label}</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '22px', fontWeight: '700', color: 'var(--azul-marino)' }}>
+                        {ind.decimales === 1 ? ind.valor.toFixed(1) : ind.valor}{ind.sufijo}
+                      </span>
+                      <span style={{ fontSize: '12px', color: '#888' }}>/ {ind.objetivo}{ind.sufijo}</span>
+                    </div>
+                    <div style={{ height: '6px', backgroundColor: 'var(--azul-palido)', borderRadius: '3px', overflow: 'hidden', marginBottom: '4px' }}>
+                      <div style={{ width: `${pct}%`, height: '100%', backgroundColor: color, borderRadius: '3px', transition: 'width 0.5s ease' }} />
+                    </div>
+                    <div style={{ fontSize: '11px', color, fontWeight: '600', textAlign: 'right' }}>{pct}%</div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Gráfico evolución histórica */}
+            {historicoData.length > 1 && (() => {
+              const maxMedia = Math.max(...historicoData.map(t => Math.max(t.mediaAsistencia, t.objetivos.media)), 1)
+              const padL = 8, padT = 24, padB = 28, barW = 40, gap = 20, h = 180
+              const totalW = padL + historicoData.length * (barW + gap) + 10
+              return (
+                <div style={{ backgroundColor: 'var(--blanco)', border: '1px solid var(--azul-claro)', borderRadius: '12px', padding: '16px' }}>
+                  <h3 style={{ color: 'var(--azul-marino)', fontSize: '14px', fontWeight: '600', marginBottom: '12px' }}>
+                    📈 Evolución media asistencia por temporada
+                  </h3>
+                  <div style={{ overflowX: 'auto' }}>
+                    <svg viewBox={`0 0 ${totalW} ${h}`} style={{ minWidth: `${totalW}px`, height: '200px', display: 'block' }}>
+                      {historicoData.map((temp, i) => {
+                        const x = padL + i * (barW + gap)
+                        const barH = (temp.mediaAsistencia / maxMedia) * (h - padB - padT)
+                        const y = h - padB - barH
+                        const yObj = h - padB - (temp.objetivos.media / maxMedia) * (h - padB - padT)
+                        const color = temp.mediaAsistencia >= temp.objetivos.media ? '#1D9E75' : 'var(--azul-medio)'
+                        return (
+                          <g key={temp.nombre}>
+                            <rect x={x} y={y} width={barW} height={barH} rx="4" fill={color} opacity={temp.activa ? 1 : 0.6} />
+                            <line x1={x - 2} y1={yObj} x2={x + barW + 2} y2={yObj} stroke="var(--naranja)" strokeWidth="2" strokeDasharray="4,3" />
+                            <text x={x + barW / 2} y={y - 6} textAnchor="middle" fontSize="11" fontWeight="700" fill="var(--azul-marino)">{temp.mediaAsistencia.toFixed(1)}</text>
+                            <text x={x + barW / 2} y={h - padB + 16} textAnchor="middle" fontSize="10" fill="#888">{temp.nombre?.replace('Temporada ', '')}</text>
+                          </g>
+                        )
+                      })}
+                    </svg>
+                  </div>
+                  <p style={{ fontSize: '11px', color: '#888', marginTop: '8px' }}>
+                    🟠 línea discontinua = objetivo de cada temporada · 🟢 verde = objetivo cumplido · 🔵 azul = en progreso
+                  </p>
+                </div>
+              )
+            })()}
+          </div>
+        )
+      })()}
 
       {/* Acciones rápidas */}
       <h2 style={{ color: 'var(--azul-marino)', fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>
