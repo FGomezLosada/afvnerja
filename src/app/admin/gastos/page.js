@@ -111,10 +111,11 @@ export default function AdminGastos() {
     cargarGastos(temporada?.id)
   }
 
-  const totalGastos = gastos.reduce((sum, g) => sum + (g.importe || 0), 0)
+  const totalGastosReales = gastos.filter(g => (g.importe || 0) > 0).reduce((sum, g) => sum + g.importe, 0)
+  const totalOtrosIngresos = gastos.filter(g => (g.importe || 0) < 0).reduce((sum, g) => sum + Math.abs(g.importe), 0)
   const porCategoria = categoriaOpciones.map(cat => ({
     cat,
-    total: gastos.filter(g => g.categoria === cat).reduce((sum, g) => sum + (g.importe || 0), 0)
+    total: gastos.filter(g => g.categoria === cat && (g.importe || 0) > 0).reduce((sum, g) => sum + (g.importe || 0), 0)
   })).filter(c => c.total > 0)
 
   const categoriaColor = {
@@ -142,9 +143,15 @@ export default function AdminGastos() {
       {/* Resumen */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '24px' }}>
         <div style={{ backgroundColor: 'var(--azul-marino)', borderRadius: '10px', padding: '16px', textAlign: 'center' }}>
-          <div style={{ fontSize: '24px', fontWeight: '700', color: 'white' }}>{totalGastos.toFixed(2)}€</div>
-          <div style={{ fontSize: '11px', color: 'var(--azul-claro)' }}>Total gastos</div>
+          <div style={{ fontSize: '24px', fontWeight: '700', color: 'white' }}>{totalGastosReales.toFixed(2)}€</div>
+          <div style={{ fontSize: '11px', color: 'var(--azul-claro)' }}>📉 Gastos reales</div>
         </div>
+        {totalOtrosIngresos > 0 && (
+          <div style={{ backgroundColor: '#e8f8f2', border: '1px solid #1D9E75', borderRadius: '10px', padding: '16px', textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', fontWeight: '700', color: '#1D9E75' }}>{totalOtrosIngresos.toFixed(2)}€</div>
+            <div style={{ fontSize: '11px', color: '#1D9E75' }}>📈 Otros ingresos</div>
+          </div>
+        )}
         {porCategoria.map(c => (
           <div key={c.cat} style={{ backgroundColor: 'var(--azul-palido)', border: '1px solid var(--azul-claro)', borderRadius: '10px', padding: '16px', textAlign: 'center' }}>
             <div style={{ fontSize: '20px', fontWeight: '700', color: categoriaColor[c.cat] }}>{c.total.toFixed(2)}€</div>
