@@ -62,6 +62,7 @@ export default function AdminConfig() {
     objetivo_partidos_torneos: 5,
   }
   const [form, setForm] = useState(formInicial)
+  const [tempEditando, setTempEditando] = useState(null)
 
   useEffect(() => {
     async function cargar() {
@@ -100,7 +101,7 @@ export default function AdminConfig() {
     e.preventDefault()
     setGuardando(true)
 
-    const { data: nuevaTemp, error } = await supabase.from('temporadas').insert({
+    const datos = {
       nombre: form.nombre,
       fecha_inicio: form.fecha_inicio,
       fecha_fin: form.fecha_fin,
@@ -113,14 +114,18 @@ export default function AdminConfig() {
       objetivo_socios: parseInt(form.objetivo_socios) || 20,
       objetivo_benefico: parseFloat(form.objetivo_benefico) || 0,
       objetivo_partidos_torneos: parseInt(form.objetivo_partidos_torneos) || 5,
-      activa: false,
-    }).select().single()
+    }
+
+    const { data: nuevaTemp, error } = tempEditando
+      ? await supabase.from('temporadas').update(datos).eq('id', tempEditando).select().single()
+      : await supabase.from('temporadas').insert({ ...datos, activa: false }).select().single()
 
     if (error) {
       setMensaje('Error: ' + error.message)
       setGuardando(false)
       return
     }
+    setTempEditando(null)
 
     // Generar entrenos automáticamente si hay días seleccionados
     if (form.dias_entreno.length > 0 && form.fecha_inicio && form.fecha_fin) {
@@ -189,6 +194,26 @@ export default function AdminConfig() {
     setPremiosData(prev => ({ ...prev, [tempId]: { ...actual, premios: nuevaLista } }))
   }
 
+  function editarTemporada(temp) {
+    setTempEditando(temp.id)
+    setForm({
+      nombre: temp.nombre || '',
+      fecha_inicio: temp.fecha_inicio || '',
+      fecha_fin: temp.fecha_fin || '',
+      cuota_importe: temp.cuota_importe || 60,
+      min_asistencias: temp.min_asistencias || 15,
+      dias_entreno: temp.dias_entreno || [],
+      hora_entreno: temp.hora_entreno || '20:45',
+      notas: temp.notas || '',
+      objetivo_media_asistencia: temp.objetivo_media_asistencia || 18,
+      objetivo_socios: temp.objetivo_socios || 20,
+      objetivo_benefico: temp.objetivo_benefico || 0,
+      objetivo_partidos_torneos: temp.objetivo_partidos_torneos || 5,
+    })
+    setMostrarForm(true)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   async function activarTemporada(id) {
     // Calcular saldo de la temporada activa actual antes de desactivarla
     const tempActual = temporadas.find(t => t.activa)
@@ -237,7 +262,7 @@ export default function AdminConfig() {
         <h1 style={{ color: 'var(--azul-marino)', fontSize: '22px', fontWeight: '600' }}>
           Configuración — Temporadas
         </h1>
-        <button onClick={() => setMostrarForm(!mostrarForm)} style={{
+        <button onClick={() => { setMostrarForm(!mostrarForm); setTempEditando(null); setForm(formInicial) }} style={{
           padding: '10px 20px', backgroundColor: 'var(--azul-marino)', color: 'white',
           border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer',
         }}>
@@ -255,7 +280,7 @@ export default function AdminConfig() {
       {mostrarForm && (
         <div style={{ backgroundColor: 'var(--blanco)', border: '1px solid var(--azul-claro)', borderRadius: '12px', padding: '24px', marginBottom: '24px' }}>
           <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '600', marginBottom: '20px' }}>
-            Nueva temporada
+            {tempEditando ? 'Editar temporada' : 'Nueva temporada'}
           </h2>
           <form onSubmit={guardarTemporada}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0 16px' }}>
@@ -315,7 +340,7 @@ export default function AdminConfig() {
               padding: '10px 24px', backgroundColor: 'var(--azul-marino)', color: 'white',
               border: 'none', borderRadius: '8px', fontSize: '14px', cursor: 'pointer',
             }}>
-              {generando ? '⏳ Generando entrenos...' : guardando ? 'Guardando...' : 'Crear temporada'}
+              {generando ? '⏳ Generando entrenos...' : guardando ? 'Guardando...' : tempEditando ? 'Guardar cambios' : 'Crear temporada'}
             </button>
           </form>
         </div>
@@ -361,6 +386,12 @@ export default function AdminConfig() {
                   </div>
                 )}
               </div>
+              <button onClick={() => editarTemporada(temp)} style={{
+                padding: '8px 16px', backgroundColor: 'var(--azul-palido)', color: 'var(--azul-marino)',
+                border: '1px solid var(--azul-claro)', borderRadius: '8px', fontSize: '13px', cursor: 'pointer',
+              }}>
+                ✏️ Editar temporada
+              </button>
               {!temp.activa && (
                 <button onClick={() => activarTemporada(temp.id)} style={{
                   padding: '8px 16px', backgroundColor: 'var(--azul-palido)', color: 'var(--azul-marino)',

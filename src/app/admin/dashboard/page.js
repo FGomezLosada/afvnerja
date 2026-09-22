@@ -13,6 +13,7 @@ export default function Dashboard() {
   const [topNoAparecio, setTopNoAparecio] = useState([])
   const [topBorrados, setTopBorrados] = useState([])
   const [historicoData, setHistoricoData] = useState([])
+  const [tempIndicadores, setTempIndicadores] = useState(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
@@ -133,10 +134,29 @@ export default function Dashboard() {
             : 0
         }
 
-        const { count: sociosTemp } = await supabase
-          .from('socios')
-          .select('*', { count: 'exact', head: true })
-          .eq('activo', true)
+        const { data: cuotasTemp } = await supabase
+          .from('cuotas')
+          .select('socio_id')
+          .eq('temporada_id', temp.id)
+          .in('estado', ['pagado', 'parcial', 'exento'])
+
+        const sociosTemp = cuotasTemp?.length || 0
+
+        const minAsist = temp.objetivo_media_asistencia ? (
+          await supabase.from('temporadas').select('min_asistencias').eq('id', temp.id).single()
+        ).data?.min_asistencias || 15 : 15
+
+        const { data: asistPorSocio } = await supabase
+          .from('asistencias')
+          .select('socio_id')
+          .eq('estado', 'asistio')
+          .in('evento_id', (await supabase.from('eventos').select('id').eq('temporada_id', temp.id).eq('cuenta_asistencia', true)).data?.map(e => e.id) || [])
+
+        const conteoPorSocio = {}
+        asistPorSocio?.forEach(a => {
+          conteoPorSocio[a.socio_id] = (conteoPorSocio[a.socio_id] || 0) + 1
+        })
+        const sociosActivosDeportivos = Object.values(conteoPorSocio).filter(n => n >= minAsist).length
 
         const benefico = evTemp?.filter(e => e.es_benefico).reduce((sum, e) => sum + (e.recaudacion_benefica || 0), 0) || 0
         const partidosTorneos = evTemp?.filter(e => (e.tipo === 'partido' || e.tipo === 'torneo') && e.estado === 'jugado').length || 0
@@ -145,18 +165,22 @@ export default function Dashboard() {
           nombre: temp.nombre,
           activa: temp.activa,
           mediaAsistencia,
-          socios: sociosTemp || 0,
+          socios: sociosTemp,
+          sociosActivosDeportivos,
           benefico,
           partidosTorneos,
           objetivos: {
             media: temp.objetivo_media_asistencia || 18,
             socios: temp.objetivo_socios || 20,
+            sociosActivos: temp.objetivo_socios || 15,
             benefico: temp.objetivo_benefico || 0,
             partidosTorneos: temp.objetivo_partidos_torneos || 5,
           }
         })
       }
       setHistoricoData(historicoData)
+      const activa = historicoData.find(t => t.activa)
+      if (activa) setTempIndicadores(activa.nombre)
       setLoading(false)
     }
     cargarDatos()
@@ -363,19 +387,28 @@ export default function Dashboard() {
 
       {/* PANEL DE INDICADORES */}
       {historicoData.length > 0 && (() => {
-        const actual = historicoData.find(t => t.activa)
+        const actual = historicoData.find(t => t.nombre === tempIndicadores) || historicoData.find(t => t.activa)
         if (!actual) return null
         const indicadores = [
           { label: '📊 Media asistencia', valor: actual.mediaAsistencia, objetivo: actual.objetivos.media, sufijo: '', decimales: 1 },
-          { label: '👥 Socios activos', valor: actual.socios, objetivo: actual.objetivos.socios, sufijo: '', decimales: 0 },
+          { label: '👥 Socios en la asociación', valor: actual.socios, objetivo: actual.objetivos.socios, sufijo: '', decimales: 0 },
+          { label: '⚽ Socios activos deportivamente', valor: actual.sociosActivosDeportivos, objetivo: actual.objetivos.sociosActivos, sufijo: '', decimales: 0 },
           { label: '❤️ Recaudado benéfico', valor: actual.benefico, objetivo: actual.objetivos.benefico, sufijo: '€', decimales: 0 },
           { label: '⚽ Partidos y torneos', valor: actual.partidosTorneos, objetivo: actual.objetivos.partidosTorneos, sufijo: '', decimales: 0 },
         ]
         return (
           <div style={{ marginBottom: '32px' }}>
-            <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>
-              🎯 Objetivos — {actual.nombre || ''}
-            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px', flexWrap: 'wrap' }}>
+              <h2 style={{ color: 'var(--azul-marino)', fontSize: '16px', fontWeight: '600', margin: 0 }}>
+                🎯 Objetivos
+              </h2>
+              <select value={tempIndicadores || ''} onChange={e => setTempIndicadores(e.target.value)}
+                style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--azul-claro)', fontSize: '13px', color: 'var(--azul-marino)' }}>
+                {historicoData.map(t => (
+                  <option key={t.nombre} value={t.nombre}>{t.nombre}{t.activa ? ' (activa)' : ''}</option>
+                ))}
+              </select>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '24px' }}>
               {indicadores.map(ind => {
                 const pct = ind.objetivo > 0 ? Math.min(100, Math.round((ind.valor / ind.objetivo) * 100)) : 100
