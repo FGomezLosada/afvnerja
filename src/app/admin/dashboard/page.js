@@ -68,7 +68,19 @@ export default function Dashboard() {
       const pagoIds = cuotasPagadas?.map(c => c.socio_id) || []
       const pendientes = (socios || 0) - pagoIds.length
 
-      setStats({ socios, entrenos, entrenosProgramados, partidos, partidosProgramados, torneos, torneosProgramados, otros, otrosProgramados, cuotas_pendientes: pendientes, partidosEnTorneo })
+      const hoy = new Date()
+      const { data: sociosSub35 } = await supabase
+        .from('socios')
+        .select('fecha_nacimiento')
+        .eq('activo', true)
+        .not('fecha_nacimiento', 'is', null)
+
+      const numSub35 = (sociosSub35 || []).filter(s => {
+        const edad = hoy.getFullYear() - new Date(s.fecha_nacimiento).getFullYear()
+        return edad < 35
+      }).length
+
+      setStats({ socios, entrenos, entrenosProgramados, partidos, partidosProgramados, torneos, torneosProgramados, otros, otrosProgramados, cuotas_pendientes: pendientes, partidosEnTorneo, sub35: numSub35 })
 
       // Top 3 no_aparecio (temporada activa)
       const eventoIds = eventosTemp?.map(e => e.id) || []
@@ -264,6 +276,11 @@ export default function Dashboard() {
           <div style={{ fontSize: '28px', marginBottom: '8px' }}>💰</div>
           <div style={{ fontSize: '28px', fontWeight: '700', color: stats.cuotas_pendientes > 0 ? 'var(--naranja)' : 'var(--azul-marino)' }}>{stats.cuotas_pendientes}</div>
           <div style={{ fontSize: '12px', color: 'var(--azul-medio)', marginTop: '4px' }}>Cuotas pendientes</div>
+        </div>
+        <div style={{ backgroundColor: 'var(--blanco)', border: `1px solid ${stats.sub35 > 0 ? 'var(--naranja)' : 'var(--azul-claro)'}`, borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
+          <div style={{ fontSize: '28px', marginBottom: '8px' }}>🔞</div>
+          <div style={{ fontSize: '28px', fontWeight: '700', color: stats.sub35 > 0 ? 'var(--naranja)' : 'var(--azul-marino)' }}>{stats.sub35 || 0}</div>
+          <div style={{ fontSize: '12px', color: 'var(--azul-medio)', marginTop: '4px' }}>Socios sub-35</div>
         </div>
       </div>
 

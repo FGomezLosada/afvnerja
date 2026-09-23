@@ -15,6 +15,7 @@ const posicionFiltros = [
   { key: 'centrocampista', label: '⚙️ Centrocampistas' },
   { key: 'delantero', label: '⚡ Delanteros' },
   { key: 'sin_posicion', label: '❓ Sin posición' },
+  { key: 'sub35', label: '⚠️ Sub-35' },
 ]
 
 export default function Socios() {
@@ -29,7 +30,7 @@ export default function Socios() {
   useEffect(() => {
     async function cargar() {
       const [{ data: soc }, { data: asist }, { data: gol }] = await Promise.all([
-        supabase.from('socios').select('id, apodo, nombre_completo, posicion, posiciones, foto_url').eq('activo', true).order('apodo'),
+        supabase.from('socios').select('id, apodo, nombre_completo, posicion, posiciones, foto_url, fecha_nacimiento').eq('activo', true).order('apodo'),
         supabase.from('asistencias').select('socio_id, estado').in('estado', ['asistio', 'no_aparecio']),
         supabase.from('goles').select('socio_id, cantidad'),
       ])
@@ -66,10 +67,16 @@ export default function Socios() {
     cargar()
   }, [])
 
+  const hoy = new Date()
   const sociosFiltrados = socios.filter(s => {
     const pos = s.posiciones?.[0] || s.posicion || null
     if (filtro === 'todos') return true
     if (filtro === 'sin_posicion') return !pos
+    if (filtro === 'sub35') {
+      if (!s.fecha_nacimiento) return false
+      const edad = hoy.getFullYear() - new Date(s.fecha_nacimiento).getFullYear()
+      return edad < 35
+    }
     return pos === filtro
   })
 

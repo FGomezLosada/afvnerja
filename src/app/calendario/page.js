@@ -17,14 +17,16 @@ export default function Calendario() {
   const [loading, setLoading] = useState(true)
   const [filtro, setFiltro] = useState('todos')
   const [ordenAsc, setOrdenAsc] = useState(true)
+  const [temporadaNombre, setTemporadaNombre] = useState('')
 
   useEffect(() => {
     async function cargar() {
       const { data: temporada } = await supabase
         .from('temporadas')
-        .select('id')
+        .select('id, nombre')
         .eq('activa', true)
         .single()
+      setTemporadaNombre(temporada?.nombre || '')
 
       const { data } = await supabase
         .from('eventos')
@@ -63,7 +65,7 @@ export default function Calendario() {
     <div style={{ maxWidth: '900px', margin: '0 auto', padding: '32px 24px' }}>
 
       <h1 style={{ color: 'var(--azul-marino)', fontSize: '28px', fontWeight: '600', marginBottom: '8px' }}>
-        Calendario — Temporada 2025-26
+        Calendario — {temporadaNombre}
       </h1>
       <p style={{ color: 'var(--azul-medio)', fontSize: '14px', marginBottom: '24px' }}>
         {eventos.length} eventos registrados
