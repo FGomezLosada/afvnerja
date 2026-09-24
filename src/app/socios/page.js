@@ -202,6 +202,15 @@ export default function Socios() {
                   }}>
                     {socio.apodo || socio.nombre_completo}
                   </div>
+                  {socio.fecha_nacimiento && (
+                    <div style={{
+                      fontSize: '9px', color: 'rgba(255,255,255,0.7)',
+                      textAlign: 'center', marginTop: '2px',
+                      letterSpacing: '0.05em',
+                    }}>
+                      {new Date().getFullYear() - new Date(socio.fecha_nacimiento).getFullYear()} años
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ padding: '4px 8px 10px', position: 'relative', zIndex: 2 }}>
