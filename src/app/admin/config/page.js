@@ -127,8 +127,8 @@ export default function AdminConfig() {
     }
     setTempEditando(null)
 
-    // Generar entrenos automáticamente si hay días seleccionados
-    if (form.dias_entreno.length > 0 && form.fecha_inicio && form.fecha_fin) {
+    // Generar entrenos automáticamente SOLO al crear, no al editar
+    if (!tempEditando && form.dias_entreno.length > 0 && form.fecha_inicio && form.fecha_fin) {
       setGenerando(true)
       const fechas = generarFechasEntreno(form.fecha_inicio, form.fecha_fin, form.dias_entreno)
 
@@ -149,6 +149,8 @@ export default function AdminConfig() {
       }
       setGenerando(false)
       setMensaje(`✅ Temporada creada con ${fechas.length} entrenos generados automáticamente`)
+    } else if (tempEditando) {
+      setMensaje('✅ Temporada actualizada correctamente')
     } else {
       setMensaje('✅ Temporada creada')
     }

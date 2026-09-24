@@ -278,7 +278,7 @@ export default function Dashboard() {
           <div style={{ fontSize: '12px', color: 'var(--azul-medio)', marginTop: '4px' }}>Cuotas pendientes</div>
         </div>
         <div style={{ backgroundColor: 'var(--blanco)', border: `1px solid ${stats.sub35 > 0 ? 'var(--naranja)' : 'var(--azul-claro)'}`, borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
-          <div style={{ fontSize: '28px', marginBottom: '8px' }}>🔞</div>
+          <div style={{ fontSize: '22px', marginBottom: '8px' }}>👶 <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--naranja)' }}>&lt;35</span></div>
           <div style={{ fontSize: '28px', fontWeight: '700', color: stats.sub35 > 0 ? 'var(--naranja)' : 'var(--azul-marino)' }}>{stats.sub35 || 0}</div>
           <div style={{ fontSize: '12px', color: 'var(--azul-medio)', marginTop: '4px' }}>Socios sub-35</div>
         </div>

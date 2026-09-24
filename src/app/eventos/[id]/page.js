@@ -42,7 +42,7 @@ export default function DetalleEvento() {
   async function cargarApuntados() {
     const { data } = await supabase
       .from('apuntes_entreno')
-      .select('*, socios(apodo, nombre_completo, posicion, posiciones)')
+      .select('*, socios(apodo, nombre_completo, posicion, posiciones, fecha_nacimiento)')
       .eq('evento_id', id)
       .eq('estado', 'apuntado')
       .order('created_at')
@@ -177,19 +177,54 @@ export default function DetalleEvento() {
   }
 
   async function generarEquipos() {
-    const jugadores = mezclar(apuntados.map(a => ({
-      id: a.id,
-      nombre: a.es_invitado ? a.nombre_invitado : (a.socios?.apodo || a.socios?.nombre_completo),
-      posicion: a.es_invitado ? (a.posicion_invitado || null) : (a.socios?.posiciones?.[0] || a.socios?.posicion || null),
-    })))
+    const hoy = new Date()
+    const jugadores = apuntados.map(a => {
+      const fnac = a.socios?.fecha_nacimiento
+      const edad = fnac ? hoy.getFullYear() - new Date(fnac).getFullYear() : 35
+      return {
+        id: a.id,
+        nombre: a.es_invitado ? a.nombre_invitado : (a.socios?.apodo || a.socios?.nombre_completo),
+        posicion: a.es_invitado ? (a.posicion_invitado || null) : (a.socios?.posiciones?.[0] || a.socios?.posicion || null),
+        edad,
+      }
+    })
 
-    const orden = ['portero', 'defensa', 'centrocampista', 'delantero', null]
-    const agrupados = orden.flatMap(pos => jugadores.filter(j => j.posicion === pos))
+    const total = jugadores.length
+    const tamañoBase = Math.floor(total / numEquipos)
+    const extras = total % numEquipos // primeros 'extras' equipos tendrán un jugador más
+    const tamaños = Array.from({ length: numEquipos }, (_, i) => tamañoBase + (i < extras ? 1 : 0))
 
     const equipos = Array.from({ length: numEquipos }, () => [])
-    agrupados.forEach((jugador, i) => {
-      equipos[i % numEquipos].push(jugador)
+
+    // Ordenar por posición primero, luego intercalar edades dentro de cada posición
+    const ordenPos = ['portero', 'defensa', 'centrocampista', 'delantero', null]
+    const ordenados = ordenPos.flatMap(pos => {
+      const grupo = jugadores.filter(j => j.posicion === pos)
+      if (grupo.length === 0) return []
+      // Ordenar por edad desc y mezclar alternando mayor/joven
+      grupo.sort((a, b) => b.edad - a.edad)
+      const mitad = Math.ceil(grupo.length / 2)
+      const mayores = grupo.slice(0, mitad)
+      const jovenes = grupo.slice(mitad).reverse()
+      const mezclado = []
+      const maxLen = Math.max(mayores.length, jovenes.length)
+      for (let i = 0; i < maxLen; i++) {
+        if (mayores[i]) mezclado.push(mayores[i])
+        if (jovenes[i]) mezclado.push(jovenes[i])
+      }
+      return mezclado
     })
+
+    // Repartir en ronda respetando el tamaño exacto de cada equipo
+    let idx = 0
+    let ronda = 0
+    while (idx < ordenados.length) {
+      const e = ronda % numEquipos
+      if (equipos[e].length < tamaños[e]) {
+        equipos[e].push(ordenados[idx++])
+      }
+      ronda++
+    }
 
     const nuevosEquipos = {
       lista: equipos,
