@@ -26,13 +26,34 @@ export default function Socios() {
   const [filtro, setFiltro] = useState('todos')
   const [loading, setLoading] = useState(true)
   const [totalEventos, setTotalEventos] = useState(42)
+  const [temporadaNombre, setTemporadaNombre] = useState('')
 
   useEffect(() => {
     async function cargar() {
+      const { data: temporada } = await supabase
+        .from('temporadas')
+        .select('id, nombre')
+        .eq('activa', true)
+        .single()
+
+      setTemporadaNombre(temporada?.nombre || '')
+
+      const { data: eventosTemp } = await supabase
+        .from('eventos')
+        .select('id')
+        .eq('temporada_id', temporada?.id)
+        .eq('cuenta_asistencia', true)
+
+      const eventoIds = eventosTemp?.map(e => e.id) || []
+
       const [{ data: soc }, { data: asist }, { data: gol }] = await Promise.all([
         supabase.from('socios').select('id, apodo, nombre_completo, posicion, posiciones, foto_url, fecha_nacimiento').eq('activo', true).order('apodo'),
-        supabase.from('asistencias').select('socio_id, estado').in('estado', ['asistio', 'no_aparecio']),
-        supabase.from('goles').select('socio_id, cantidad'),
+        eventoIds.length > 0
+          ? supabase.from('asistencias').select('socio_id, estado').in('estado', ['asistio', 'no_aparecio']).in('evento_id', eventoIds)
+          : Promise.resolve({ data: [] }),
+        eventoIds.length > 0
+          ? supabase.from('goles').select('socio_id, cantidad, evento_id').in('evento_id', eventoIds)
+          : Promise.resolve({ data: [] }),
       ])
 
       const sm = {}
@@ -52,16 +73,11 @@ export default function Socios() {
 
       const max = Math.max(...(soc?.map(s => sm[s.id]?.total || 0) || [1]))
 
-      const { data: evTotal } = await supabase
-        .from('eventos')
-        .select('id')
-        .eq('cuenta_asistencia', true)
-      
       setSocios(soc || [])
       setStatsMap(sm)
       setRankMap(rm)
       setMaxAsist(max)
-      setTotalEventos(evTotal?.length || 42)
+      setTotalEventos(eventoIds.length || 1)
       setLoading(false)
     }
     cargar()
@@ -89,7 +105,7 @@ export default function Socios() {
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
       <h1 style={{ color: 'var(--azul-marino)', fontSize: '28px', fontWeight: '600', marginBottom: '8px' }}>
-        Plantilla — Temporada 2025-26
+        Plantilla — {temporadaNombre}
       </h1>
       <p style={{ color: 'var(--azul-medio)', fontSize: '14px', marginBottom: '12px' }}>
         {socios.length} socios activos
