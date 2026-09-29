@@ -43,7 +43,7 @@ export default function MundoAFV() {
       contenedor.innerHTML = ''
     }
 
-    const mapa = L.map('mapa-afv', { zoomControl: true }).setView([40, -3], 5)
+    const mapa = L.map('mapa-afv', { zoomControl: true, dragging: true, scrollWheelZoom: true }).setView([40, -3], 5)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(mapa)

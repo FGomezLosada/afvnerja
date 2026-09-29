@@ -27,6 +27,7 @@ export default function Socios() {
   const [loading, setLoading] = useState(true)
   const [totalEventos, setTotalEventos] = useState(42)
   const [temporadaNombre, setTemporadaNombre] = useState('')
+  const [dorsalMap, setDorsalMap] = useState({})
 
   useEffect(() => {
     async function cargar() {
@@ -46,7 +47,7 @@ export default function Socios() {
 
       const eventoIds = eventosTemp?.map(e => e.id) || []
 
-      const [{ data: soc }, { data: asist }, { data: gol }] = await Promise.all([
+      const [{ data: soc }, { data: asist }, { data: gol }, { data: dorsalesData }] = await Promise.all([
         supabase.from('socios').select('id, apodo, nombre_completo, posicion, posiciones, foto_url, fecha_nacimiento').eq('activo', true).order('apodo'),
         eventoIds.length > 0
           ? supabase.from('asistencias').select('socio_id, estado').in('estado', ['asistio', 'no_aparecio']).in('evento_id', eventoIds)
@@ -54,7 +55,15 @@ export default function Socios() {
         eventoIds.length > 0
           ? supabase.from('goles').select('socio_id, cantidad, evento_id').in('evento_id', eventoIds)
           : Promise.resolve({ data: [] }),
+        supabase.from('dorsales').select('socio_id, numero, equipacion'),
       ])
+
+      const dorsalMap = {}
+      dorsalesData?.forEach(d => {
+        if (!dorsalMap[d.socio_id] || d.equipacion === 'primera') {
+          dorsalMap[d.socio_id] = d.numero
+        }
+      })
 
       const sm = {}
       asist?.forEach(a => {
@@ -77,6 +86,7 @@ export default function Socios() {
       setStatsMap(sm)
       setRankMap(rm)
       setMaxAsist(max)
+      setDorsalMap(dorsalMap)
       setTotalEventos(eventoIds.length || 1)
       setLoading(false)
     }
@@ -233,7 +243,7 @@ export default function Socios() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px' }}>
                     {[
                       { label: 'ASI', valor: stats.total },
-                      { label: '%', valor: `${pct}` },
+                      { label: 'DORSAL', valor: dorsalMap[socio.id] ?? '—' },
                       { label: 'GOL', valor: stats.goles },
                     ].map(stat => (
                       <div key={stat.label} style={{ textAlign: 'center' }}>

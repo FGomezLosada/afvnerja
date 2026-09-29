@@ -159,7 +159,7 @@ export default async function Estadisticas() {
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
 
       <h1 style={{ color: 'var(--azul-marino)', fontSize: '28px', fontWeight: '600', marginBottom: '8px' }}>
-        Estadísticas — Temporada {temporadaActiva?.nombre || ''}
+        Estadísticas — {temporadaActiva?.nombre || ''}
       </h1>
 
       <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '32px' }}>

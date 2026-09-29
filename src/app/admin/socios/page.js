@@ -16,6 +16,7 @@ export default function AdminSocios() {
   const [mostrarForm, setMostrarForm] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState('')
+  const [dorsalesForm, setDorsalesForm] = useState({ primera: '', segunda: '' })
   const [socioEditando, setSocioEditando] = useState(null)
   const [busqueda, setBusqueda] = useState('')
   const [subiendoFoto, setSubiendoFoto] = useState(false)
@@ -48,7 +49,15 @@ export default function AdminSocios() {
     setLoading(false)
   }
 
-  function editarSocio(socio) {
+  async function editarSocio(socio) {
+    const { data: dorsales } = await supabase
+      .from('dorsales')
+      .select('numero, equipacion')
+      .eq('socio_id', socio.id)
+
+    const primera = dorsales?.find(d => d.equipacion === 'primera')?.numero || ''
+    const segunda = dorsales?.find(d => d.equipacion === 'segunda')?.numero || ''
+    setDorsalesForm({ primera, segunda })
     setForm({
       nombre_completo: socio.nombre_completo || '',
       apodo: socio.apodo || '',
@@ -106,6 +115,19 @@ posiciones: form.posiciones,
     if (error) {
       setMensaje('Error: ' + error.message)
     } else {
+      const socioId = socioEditando || (await supabase.from('socios').select('id').order('created_at', { ascending: false }).limit(1).single()).data?.id
+
+      for (const [equip, num] of [['primera', dorsalesForm.primera], ['segunda', dorsalesForm.segunda]]) {
+        if (num !== '' && num !== null && num !== undefined) {
+          await supabase.from('dorsales').upsert({
+            socio_id: socioId,
+            equipacion: equip,
+            numero: parseInt(num),
+            nombre_camiseta: form.apodo || form.nombre_completo,
+          }, { onConflict: 'socio_id,equipacion' })
+        }
+      }
+
       setMensaje(socioEditando ? '✅ Socio actualizado' : '✅ Socio creado')
       setForm(formInicial)
       setSocioEditando(null)
@@ -256,6 +278,23 @@ posiciones: form.posiciones,
               {select('Talla general', 'talla_general', tallaOpciones)}
               {select('Talla superior', 'talla_superior', tallaOpciones)}
               {select('Talla inferior', 'talla_inferior', tallaOpciones)}
+              <div style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--azul-claro)', paddingTop: '12px', marginTop: '4px' }}>
+                <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--azul-marino)', marginBottom: '8px' }}>Dorsales</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '11px', color: 'var(--azul-medio)', display: 'block', marginBottom: '4px' }}>1ª Equipación (azul)</label>
+                    <input type="number" min="1" max="99" value={dorsalesForm.primera}
+                      onChange={e => setDorsalesForm(f => ({ ...f, primera: e.target.value }))}
+                      style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--azul-claro)', borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box' }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '11px', color: 'var(--azul-medio)', display: 'block', marginBottom: '4px' }}>2ª Equipación (verde)</label>
+                    <input type="number" min="1" max="99" value={dorsalesForm.segunda}
+                      onChange={e => setDorsalesForm(f => ({ ...f, segunda: e.target.value }))}
+                      style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--azul-claro)', borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box' }} />
+                  </div>
+                </div>
+              </div>
             </div>
             <div style={{ marginBottom: '14px' }}>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: 'var(--azul-marino)', marginBottom: '4px' }}>Notas internas</label>
