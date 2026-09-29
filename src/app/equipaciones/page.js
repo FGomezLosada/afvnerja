@@ -5,16 +5,36 @@ import { supabase } from '@/lib/supabase'
 
 export default function Equipaciones() {
   const [patrocinadores, setPatrocinadores] = useState([])
+  const [listado, setListado] = useState([])
+  const [tabEquipacion, setTabEquipacion] = useState('primera')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function cargar() {
-      const { data } = await supabase
-        .from('patrocinadores')
-        .select('*')
-        .eq('activo', true)
-        .order('prenda')
+      const [{ data }, { data: dorsales }, { data: socios }] = await Promise.all([
+        supabase.from('patrocinadores').select('*').eq('activo', true).order('prenda'),
+        supabase.from('dorsales').select('socio_id, numero, equipacion'),
+        supabase.from('socios').select('id, apodo, nombre_completo, talla_general, talla_superior, talla_inferior').eq('activo', true).order('apodo'),
+      ])
       setPatrocinadores(data || [])
+
+      const dorsalMap = {}
+      dorsales?.forEach(d => {
+        if (!dorsalMap[d.socio_id]) dorsalMap[d.socio_id] = {}
+        dorsalMap[d.socio_id][d.equipacion] = d.numero
+      })
+
+      const lista = (socios || []).map(s => ({
+        id: s.id,
+        nombre: s.apodo || s.nombre_completo,
+        tallaSuperior: s.talla_superior || s.talla_general || '—',
+        tallaInferior: s.talla_inferior || s.talla_general || '—',
+        tallaGeneral: s.talla_general || '—',
+        dorsalPrimera: dorsalMap[s.id]?.primera ?? null,
+        dorsalSegunda: dorsalMap[s.id]?.segunda ?? null,
+      }))
+
+      setListado(lista)
       setLoading(false)
     }
     cargar()
@@ -175,6 +195,74 @@ export default function Equipaciones() {
           )
         })}
       </div>
+      {/* LISTADO PEDIDO EQUIPACIÓN */}
+      <div style={{ marginTop: '48px' }}>
+        <h2 style={{ color: 'var(--azul-marino)', fontSize: '22px', fontWeight: '600', marginBottom: '8px' }}>
+          📋 Listado de tallas y dorsales
+        </h2>
+        <p style={{ color: 'var(--azul-medio)', fontSize: '13px', marginBottom: '20px' }}>
+          Datos para pedidos de equipación. Los socios sin dorsal asignado aparecen al final.
+        </p>
+
+        {/* Pestañas */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+          {[
+            { key: 'primera', label: '🔵 1ª Equipación (azul)' },
+            { key: 'segunda', label: '🟢 2ª Equipación (verde)' },
+          ].map(t => (
+            <button key={t.key} onClick={() => setTabEquipacion(t.key)} style={{
+              padding: '8px 18px', fontSize: '13px', borderRadius: '8px', cursor: 'pointer',
+              backgroundColor: tabEquipacion === t.key ? 'var(--azul-marino)' : 'var(--azul-palido)',
+              color: tabEquipacion === t.key ? 'white' : 'var(--azul-medio)',
+              border: `1px solid ${tabEquipacion === t.key ? 'var(--azul-marino)' : 'var(--azul-claro)'}`,
+              fontWeight: tabEquipacion === t.key ? '600' : '400',
+            }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tabla */}
+        <div style={{ overflowX: 'auto', borderRadius: '12px', border: '1px solid var(--azul-claro)' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '500px' }}>
+            <thead>
+              <tr style={{ backgroundColor: 'var(--azul-marino)', color: 'white' }}>
+                <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: '12px', fontWeight: '600', width: '70px' }}>Dorsal</th>
+                <th style={{ padding: '10px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '600' }}>Nombre</th>
+                <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: '12px', fontWeight: '600' }}>T. Superior</th>
+                <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: '12px', fontWeight: '600' }}>T. Inferior</th>
+                <th style={{ padding: '10px 16px', textAlign: 'center', fontSize: '12px', fontWeight: '600' }}>T. General</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...listado]
+                .sort((a, b) => {
+                  const da = tabEquipacion === 'primera' ? a.dorsalPrimera : a.dorsalSegunda
+                  const db = tabEquipacion === 'primera' ? b.dorsalPrimera : b.dorsalSegunda
+                  if (da === null && db === null) return a.nombre.localeCompare(b.nombre)
+                  if (da === null) return 1
+                  if (db === null) return -1
+                  return da - db
+                })
+                .map((s, i) => {
+                  const dorsal = tabEquipacion === 'primera' ? s.dorsalPrimera : s.dorsalSegunda
+                  return (
+                    <tr key={s.id} style={{ backgroundColor: i % 2 === 0 ? 'white' : 'var(--azul-palido)', borderBottom: '1px solid var(--azul-claro)' }}>
+                      <td style={{ padding: '10px 16px', textAlign: 'center', fontWeight: '700', color: dorsal ? 'var(--azul-marino)' : '#ccc', fontSize: '15px' }}>
+                        {dorsal ?? '—'}
+                      </td>
+                      <td style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--azul-marino)', fontWeight: '500' }}>{s.nombre}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center', fontSize: '13px', color: 'var(--azul-medio)' }}>{s.tallaSuperior}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center', fontSize: '13px', color: 'var(--azul-medio)' }}>{s.tallaInferior}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center', fontSize: '13px', color: 'var(--azul-medio)' }}>{s.tallaGeneral}</td>
+                    </tr>
+                  )
+                })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   )
 }
