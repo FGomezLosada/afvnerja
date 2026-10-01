@@ -160,13 +160,13 @@ export default async function Home() {
 
   const OBJETIVO_ASISTENCIA = 18
   const padLeft = 10
-  const padTop = 30
+  const padTop = 48
   const padBottom = 30
   const barWidth = 40
   const gap = 24
   const chartHeight = 220
   const maxValor = Math.ceil((Math.max(OBJETIVO_ASISTENCIA, ...evolucionMensual.map(m => m.media), 1) * 1.15) / 2) * 2
-  const chartWidth = padLeft + evolucionMensual.length * (barWidth + gap) + 10
+  const chartWidth = Math.max(300, padLeft + evolucionMensual.length * (barWidth + gap) + 10)
   const yObjetivo = chartHeight - padBottom - (OBJETIVO_ASISTENCIA / maxValor) * (chartHeight - padBottom - padTop)
 
   const hoyDate = new Date()
@@ -347,10 +347,7 @@ export default async function Home() {
                   </linearGradient>
                 </defs>
 
-                <line x1={padLeft} y1={yObjetivo} x2={chartWidth - 10} y2={yObjetivo} stroke="#D4721A" strokeWidth="2" strokeDasharray="6,5" />
-                <text x={chartWidth - 10} y={yObjetivo - 8} textAnchor="end" fontSize="12" fill="#D4721A" fontWeight="700">
-                  Objetivo {OBJETIVO_ASISTENCIA}.0
-                </text>
+
 
                 {evolucionMensual.map((m, i) => {
                   const x = padLeft + i * (barWidth + gap)
@@ -369,6 +366,12 @@ export default async function Home() {
                     </g>
                   )
                 })}
+                {/* Línea objetivo encima de las barras */}
+                <line x1={padLeft} y1={yObjetivo} x2={chartWidth - 10} y2={yObjetivo} stroke="#D4721A" strokeWidth="2" strokeDasharray="6,5" />
+                  <text x={padLeft} y={14} textAnchor="start" fontSize="11" fill="#D4721A" fontWeight="700">
+                  - - Objetivo {OBJETIVO_ASISTENCIA}.0
+                </text>
+                <line x1={padLeft} y1={yObjetivo} x2={chartWidth - 10} y2={yObjetivo} stroke="#D4721A" strokeWidth="2" strokeDasharray="6,5" />
               </svg>
             </div>
           )}
