@@ -196,35 +196,51 @@ export default function DetalleEvento() {
 
     const equipos = Array.from({ length: numEquipos }, () => [])
 
-    // Ordenar por posición primero, luego intercalar edades dentro de cada posición
-    const ordenPos = ['portero', 'defensa', 'centrocampista', 'delantero', null]
-    const ordenados = ordenPos.flatMap(pos => {
-      const grupo = jugadores.filter(j => j.posicion === pos)
-      if (grupo.length === 0) return []
-      // Ordenar por edad desc y mezclar alternando mayor/joven
-      grupo.sort((a, b) => b.edad - a.edad)
-      const mitad = Math.ceil(grupo.length / 2)
-      const mayores = grupo.slice(0, mitad)
-      const jovenes = grupo.slice(mitad).reverse()
-      const mezclado = []
-      const maxLen = Math.max(mayores.length, jovenes.length)
-      for (let i = 0; i < maxLen; i++) {
-        if (mayores[i]) mezclado.push(mayores[i])
-        if (jovenes[i]) mezclado.push(jovenes[i])
-      }
-      return mezclado
-    })
+    // Separar por grupos prioritarios
+    const porteros = jugadores.filter(j => j.posicion === 'portero')
+    const sub35 = jugadores.filter(j => j.posicion !== 'portero' && j.edad < 35)
+    const resto = jugadores.filter(j => j.posicion !== 'portero' && j.edad >= 35)
 
-    // Repartir en ronda respetando el tamaño exacto de cada equipo
-    let idx = 0
-    let ronda = 0
-    while (idx < ordenados.length) {
-      const e = ronda % numEquipos
-      if (equipos[e].length < tamaños[e]) {
-        equipos[e].push(ordenados[idx++])
+    // Función: repartir un array en ronda snake (0,1,2,2,1,0,...) entre equipos
+    function repartirSnake(lista, equipos, tamaños) {
+      let dir = 1
+      let e = 0
+      for (const jugador of lista) {
+        // Buscar siguiente equipo con hueco
+        let intentos = 0
+        while (equipos[e].length >= tamaños[e] && intentos < numEquipos * 2) {
+          e = (e + dir + numEquipos) % numEquipos
+          intentos++
+        }
+        if (equipos[e].length < tamaños[e]) {
+          equipos[e].push(jugador)
+        }
+        e = e + dir
+        if (e >= numEquipos) { e = numEquipos - 1; dir = -1 }
+        if (e < 0) { e = 0; dir = 1 }
       }
-      ronda++
     }
+
+    // 1. Porteros: uno por equipo en orden
+    porteros.sort(() => Math.random() - 0.5)
+    for (let i = 0; i < porteros.length; i++) {
+      const e = i % numEquipos
+      if (equipos[e].length < tamaños[e]) equipos[e].push(porteros[i])
+      else equipos[(i + 1) % numEquipos]?.push(porteros[i])
+    }
+
+    // 2. Sub-35: repartir uno por equipo en ronda para que no se junten
+    sub35.sort(() => Math.random() - 0.5)
+    repartirSnake(sub35, equipos, tamaños)
+
+    // 3. Resto por posición (defensas > centros > delanteros > sin posición), alternando edades
+    const ordenPos = ['defensa', 'centrocampista', 'delantero', null]
+    const restoPorPos = ordenPos.flatMap(pos => {
+      const grupo = resto.filter(j => j.posicion === pos)
+      grupo.sort((a, b) => b.edad - a.edad)
+      return grupo
+    })
+    repartirSnake(restoPorPos, equipos, tamaños)
 
     const nuevosEquipos = {
       lista: equipos,

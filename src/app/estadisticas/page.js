@@ -8,7 +8,7 @@ const posicionIcon = (p) => {
   return '⚽'
 }
 
-export const revalidate = 0
+export const revalidate = 120
 
 export default async function Estadisticas() {
   const { data: temporadaActiva } = await supabase
