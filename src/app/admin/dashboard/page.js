@@ -80,7 +80,22 @@ export default function Dashboard() {
         return edad < 35
       }).length
 
-      setStats({ socios, entrenos, entrenosProgramados, partidos, partidosProgramados, torneos, torneosProgramados, otros, otrosProgramados, cuotas_pendientes: pendientes, partidosEnTorneo, sub35: numSub35 })
+      // Tipos de socios
+      const { data: tiposSocios } = await supabase
+        .from('socios')
+        .select('tipo_socio')
+        .eq('activo', true)
+
+      const tiposConteo = {}
+      tiposSocios?.forEach(s => {
+        if (s.tipo_socio) tiposConteo[s.tipo_socio] = (tiposConteo[s.tipo_socio] || 0) + 1
+      })
+
+      const numEntrenan = tiposConteo['activo_entrenos'] || 0
+      const numSoloPartidos = tiposConteo['activo_partidos'] || 0
+      const numColaborativos = tiposConteo['colaborativo'] || 0
+
+      setStats({ socios, entrenos, entrenosProgramados, partidos, partidosProgramados, torneos, torneosProgramados, otros, otrosProgramados, cuotas_pendientes: pendientes, partidosEnTorneo, sub35: numSub35, numEntrenan, numSoloPartidos, numColaborativos })
 
       // Top 3 no_aparecio (temporada activa)
       const eventoIds = eventosTemp?.map(e => e.id) || []
@@ -118,66 +133,62 @@ export default function Dashboard() {
       // Financiero de la temporada activa
       await cargarFinanciero(tempActiva?.id)
 
-      // Cargar datos históricos de todas las temporadas
+      // Cargar datos históricos — todas las consultas en paralelo
       const { data: todasTemps } = await supabase
         .from('temporadas')
-        .select('id, nombre, activa, objetivo_media_asistencia, objetivo_socios, objetivo_benefico, objetivo_partidos_torneos')
+        .select('id, nombre, activa, objetivo_media_asistencia, objetivo_socios, objetivo_benefico, objetivo_partidos_torneos, min_asistencias')
         .order('fecha_inicio', { ascending: true })
 
-      const historicoData = []
-      for (const temp of todasTemps || []) {
-        const { data: evTemp } = await supabase
-          .from('eventos')
-          .select('id, tipo, estado, cuenta_asistencia, recaudacion_benefica, es_benefico')
-          .eq('temporada_id', temp.id)
+      const [{ data: todosEventos }, { data: todasAsist }, { data: todasCuotas }] = await Promise.all([
+        supabase.from('eventos').select('id, temporada_id, tipo, estado, cuenta_asistencia, recaudacion_benefica, es_benefico'),
+        supabase.from('asistencias').select('socio_id, evento_id, estado').eq('estado', 'asistio'),
+        supabase.from('cuotas').select('socio_id, temporada_id, estado').in('estado', ['pagado', 'parcial', 'exento']),
+      ])
 
-        const entrenosJugados = evTemp?.filter(e => e.tipo === 'entreno' && e.estado === 'jugado') || []
-        const idsEntrenos = entrenosJugados.map(e => e.id)
+      // Indexar por temporada para acceso rápido
+      const eventosPorTemp = {}
+      todosEventos?.forEach(e => {
+        if (!eventosPorTemp[e.temporada_id]) eventosPorTemp[e.temporada_id] = []
+        eventosPorTemp[e.temporada_id].push(e)
+      })
 
-        let mediaAsistencia = 0
-        if (idsEntrenos.length > 0) {
-          const { data: asistTemp } = await supabase
-            .from('asistencias')
-            .select('evento_id')
-            .eq('estado', 'asistio')
-            .in('evento_id', idsEntrenos)
-          mediaAsistencia = idsEntrenos.length > 0
-            ? Math.round((asistTemp?.length || 0) / idsEntrenos.length * 10) / 10
-            : 0
-        }
+      const asistPorEvento = {}
+      todasAsist?.forEach(a => {
+        if (!asistPorEvento[a.evento_id]) asistPorEvento[a.evento_id] = []
+        asistPorEvento[a.evento_id].push(a.socio_id)
+      })
 
-        const { data: cuotasTemp } = await supabase
-          .from('cuotas')
-          .select('socio_id')
-          .eq('temporada_id', temp.id)
-          .in('estado', ['pagado', 'parcial', 'exento'])
+      const cuotasPorTemp = {}
+      todasCuotas?.forEach(c => {
+        if (!cuotasPorTemp[c.temporada_id]) cuotasPorTemp[c.temporada_id] = 0
+        cuotasPorTemp[c.temporada_id]++
+      })
 
-        const sociosTemp = cuotasTemp?.length || 0
+      const historicoData = (todasTemps || []).map(temp => {
+        const evTemp = eventosPorTemp[temp.id] || []
+        const entrenosJugados = evTemp.filter(e => e.tipo === 'entreno' && e.estado === 'jugado')
+        const totalAsist = entrenosJugados.reduce((sum, e) => sum + (asistPorEvento[e.id]?.length || 0), 0)
+        const mediaAsistencia = entrenosJugados.length > 0
+          ? Math.round(totalAsist / entrenosJugados.length * 10) / 10
+          : 0
 
-        const minAsist = temp.objetivo_media_asistencia ? (
-          await supabase.from('temporadas').select('min_asistencias').eq('id', temp.id).single()
-        ).data?.min_asistencias || 15 : 15
-
-        const { data: asistPorSocio } = await supabase
-          .from('asistencias')
-          .select('socio_id')
-          .eq('estado', 'asistio')
-          .in('evento_id', (await supabase.from('eventos').select('id').eq('temporada_id', temp.id).eq('cuenta_asistencia', true)).data?.map(e => e.id) || [])
-
+        const eventosConAsist = evTemp.filter(e => e.cuenta_asistencia)
         const conteoPorSocio = {}
-        asistPorSocio?.forEach(a => {
-          conteoPorSocio[a.socio_id] = (conteoPorSocio[a.socio_id] || 0) + 1
+        eventosConAsist.forEach(e => {
+          asistPorEvento[e.id]?.forEach(socioId => {
+            conteoPorSocio[socioId] = (conteoPorSocio[socioId] || 0) + 1
+          })
         })
+        const minAsist = temp.min_asistencias || 15
         const sociosActivosDeportivos = Object.values(conteoPorSocio).filter(n => n >= minAsist).length
+        const benefico = evTemp.filter(e => e.es_benefico).reduce((sum, e) => sum + (e.recaudacion_benefica || 0), 0)
+        const partidosTorneos = evTemp.filter(e => (e.tipo === 'partido' || e.tipo === 'torneo') && e.estado === 'jugado').length
 
-        const benefico = evTemp?.filter(e => e.es_benefico).reduce((sum, e) => sum + (e.recaudacion_benefica || 0), 0) || 0
-        const partidosTorneos = evTemp?.filter(e => (e.tipo === 'partido' || e.tipo === 'torneo') && e.estado === 'jugado').length || 0
-
-        historicoData.push({
+        return {
           nombre: temp.nombre,
           activa: temp.activa,
           mediaAsistencia,
-          socios: sociosTemp,
+          socios: cuotasPorTemp[temp.id] || 0,
           sociosActivosDeportivos,
           benefico,
           partidosTorneos,
@@ -188,8 +199,9 @@ export default function Dashboard() {
             benefico: temp.objetivo_benefico || 0,
             partidosTorneos: temp.objetivo_partidos_torneos || 5,
           }
-        })
-      }
+        }
+      })
+
       setHistoricoData(historicoData)
       const activa = historicoData.find(t => t.activa)
       if (activa) setTempIndicadores(activa.nombre)
@@ -277,10 +289,34 @@ export default function Dashboard() {
           <div style={{ fontSize: '28px', fontWeight: '700', color: stats.cuotas_pendientes > 0 ? 'var(--naranja)' : 'var(--azul-marino)' }}>{stats.cuotas_pendientes}</div>
           <div style={{ fontSize: '12px', color: 'var(--azul-medio)', marginTop: '4px' }}>Cuotas pendientes</div>
         </div>
-        <div style={{ backgroundColor: 'var(--blanco)', border: `1px solid ${stats.sub35 > 0 ? 'var(--naranja)' : 'var(--azul-claro)'}`, borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
-          <div style={{ fontSize: '22px', marginBottom: '8px' }}>👶 <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--naranja)' }}>&lt;35</span></div>
-          <div style={{ fontSize: '28px', fontWeight: '700', color: stats.sub35 > 0 ? 'var(--naranja)' : 'var(--azul-marino)' }}>{stats.sub35 || 0}</div>
-          <div style={{ fontSize: '12px', color: 'var(--azul-medio)', marginTop: '4px' }}>Socios sub-35</div>
+        <div style={{ backgroundColor: 'var(--blanco)', border: '1px solid var(--azul-claro)', borderRadius: '12px', padding: '20px', gridColumn: 'span 2' }}>
+          <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--azul-marino)', marginBottom: '12px' }}>👥 Perfil de socios</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {stats.numEntrenan > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '12px', color: 'var(--azul-medio)' }}>⚽ Entrenan regularmente</span>
+                <span style={{ fontSize: '20px', fontWeight: '700', color: 'var(--azul-marino)' }}>{stats.numEntrenan}</span>
+              </div>
+            )}
+            {stats.numSoloPartidos > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '12px', color: 'var(--azul-medio)' }}>🏟️ Solo partidos</span>
+                <span style={{ fontSize: '20px', fontWeight: '700', color: 'var(--azul-marino)' }}>{stats.numSoloPartidos}</span>
+              </div>
+            )}
+            {stats.numColaborativos > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '12px', color: 'var(--azul-medio)' }}>🤝 Colaborativos</span>
+                <span style={{ fontSize: '20px', fontWeight: '700', color: 'var(--azul-marino)' }}>{stats.numColaborativos}</span>
+              </div>
+            )}
+            {stats.sub35 > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--azul-claro)', paddingTop: '8px', marginTop: '4px' }}>
+                <span style={{ fontSize: '12px', color: 'var(--azul-medio)' }}>👶 Sub-35</span>
+                <span style={{ fontSize: '20px', fontWeight: '700', color: 'var(--naranja)' }}>{stats.sub35}</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
