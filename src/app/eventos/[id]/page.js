@@ -66,7 +66,7 @@ export default function DetalleEvento() {
     const ahora = new Date()
     const fechaEntreno = new Date(`${evento.fecha}T${evento.hora || '20:45'}`)
 
-    const horasApertura = (evento.tipo === 'partido' || evento.tipo === 'torneo') ? 10 * 24 : 48
+    const horasApertura = (evento.tipo === 'partido' || evento.tipo === 'torneo') ? 10 * 24 : 72
     const horasCierre = (evento.tipo === 'partido' || evento.tipo === 'torneo') ? 1 : 0
 
     const aperturaApunte = new Date(fechaEntreno.getTime() - horasApertura * 60 * 60 * 1000)
@@ -306,7 +306,7 @@ export default function DetalleEvento() {
             </div>
           ) : (
             <div style={{ textAlign: 'center', padding: '12px', backgroundColor: '#FEF9C3', borderRadius: '8px', color: '#854D0E', fontSize: '13px', marginBottom: '24px' }}>
-              ⏰ La ventana de apunte está cerrada {evento.tipo === 'entreno' ? '(se abre 48h antes y cierra a la hora del evento)' : '(se abre 10 días antes y cierra 1h antes)'}
+              ⏰ La ventana de apunte está cerrada {evento.tipo === 'entreno' ? '(se abre 72h antes y cierra a la hora del evento)' : '(se abre 10 días antes y cierra 1h antes)'}
             </div>
           )}
 
