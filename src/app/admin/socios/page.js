@@ -235,7 +235,7 @@ posiciones: form.posiciones,
               {campo('Fecha de nacimiento', 'fecha_nacimiento', 'date')}
               {campo('Fecha de alta', 'fecha_alta', 'date')}
               {select('Tipo de socio', 'tipo_socio', tipoSocioOpciones)}
-              <div style={{ marginBottom: '14px', gridColumn: 'span 2' }}>
+              <div style={{ marginBottom: '14px' }}>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: '500', color: 'var(--azul-marino)', marginBottom: '8px' }}>
                 Posiciones (selecciona por orden de importancia)
               </label>
@@ -278,7 +278,7 @@ posiciones: form.posiciones,
               {select('Talla general', 'talla_general', tallaOpciones)}
               {select('Talla superior', 'talla_superior', tallaOpciones)}
               {select('Talla inferior', 'talla_inferior', tallaOpciones)}
-              <div style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--azul-claro)', paddingTop: '12px', marginTop: '4px' }}>
+              <div style={{ borderTop: '1px solid var(--azul-claro)', paddingTop: '12px', marginTop: '4px' }}>
                 <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--azul-marino)', marginBottom: '8px' }}>Dorsales</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div>
