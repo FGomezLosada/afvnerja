@@ -258,7 +258,7 @@ export default function AdminPatrocinadores() {
                 {p.temporada_inicio ? ` · Desde ${p.temporada_inicio}` : ''}
               </div>
               {p.web_url && (
-                <a href={p.web_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: 'var(--azul-medio)', textDecoration: 'none' }}>
+                <a href={p.web_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '11px', color: 'var(--azul-medio)', textDecoration: 'none', wordBreak: 'break-all', display: 'block' }}>
                   🔗 {p.web_url}
                 </a>
               )}
