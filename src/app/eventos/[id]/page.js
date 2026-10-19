@@ -178,35 +178,40 @@ export default function DetalleEvento() {
 
   async function generarEquipos() {
     const hoy = new Date()
+    const SEPARAR_APODOS = ['iván mejías', 'franchi benitez']
+
     const jugadores = apuntados.map(a => {
       const fnac = a.socios?.fecha_nacimiento
-      const edad = fnac ? hoy.getFullYear() - new Date(fnac).getFullYear() : 35
+      const edad = fnac ? hoy.getFullYear() - new Date(fnac).getFullYear() : null
+      const nombre = a.es_invitado ? a.nombre_invitado : (a.socios?.apodo || a.socios?.nombre_completo)
       return {
         id: a.id,
-        nombre: a.es_invitado ? a.nombre_invitado : (a.socios?.apodo || a.socios?.nombre_completo),
+        nombre,
         posicion: a.es_invitado ? (a.posicion_invitado || null) : (a.socios?.posiciones?.[0] || a.socios?.posicion || null),
         edad,
+        esSeparado: SEPARAR_APODOS.includes(nombre?.toLowerCase().trim()),
+        esMayor55: edad !== null && edad > 55,
       }
     })
 
     const total = jugadores.length
     const tamañoBase = Math.floor(total / numEquipos)
-    const extras = total % numEquipos // primeros 'extras' equipos tendrán un jugador más
+    const extras = total % numEquipos
     const tamaños = Array.from({ length: numEquipos }, (_, i) => tamañoBase + (i < extras ? 1 : 0))
 
     const equipos = Array.from({ length: numEquipos }, () => [])
 
-    // Separar por grupos prioritarios
+    // Grupos prioritarios
     const porteros = jugadores.filter(j => j.posicion === 'portero')
-    const sub35 = jugadores.filter(j => j.posicion !== 'portero' && j.edad < 35)
-    const resto = jugadores.filter(j => j.posicion !== 'portero' && j.edad >= 35)
+    const sub35 = jugadores.filter(j => j.posicion !== 'portero' && j.edad !== null && j.edad < 35)
+    const mayor55 = jugadores.filter(j => j.posicion !== 'portero' && j.esMayor55)
+    const resto = jugadores.filter(j => j.posicion !== 'portero' && !j.esMayor55 && !(j.edad !== null && j.edad < 35))
 
     // Función: repartir un array en ronda snake (0,1,2,2,1,0,...) entre equipos
     function repartirSnake(lista, equipos, tamaños) {
       let dir = 1
       let e = 0
       for (const jugador of lista) {
-        // Buscar siguiente equipo con hueco
         let intentos = 0
         while (equipos[e].length >= tamaños[e] && intentos < numEquipos * 2) {
           e = (e + dir + numEquipos) % numEquipos
@@ -229,18 +234,45 @@ export default function DetalleEvento() {
       else equipos[(i + 1) % numEquipos]?.push(porteros[i])
     }
 
-    // 2. Sub-35: repartir uno por equipo en ronda para que no se junten
+    // 2. Sub-35: repartir en snake para no concentrarlos
     sub35.sort(() => Math.random() - 0.5)
     repartirSnake(sub35, equipos, tamaños)
 
-    // 3. Resto por posición (defensas > centros > delanteros > sin posición), alternando edades
+    // 3. Mayores de 55: repartir en snake para no concentrarlos (variable extra)
+    mayor55.sort(() => Math.random() - 0.5)
+    repartirSnake(mayor55, equipos, tamaños)
+
+    // 4. Resto por posición (defensas > centros > delanteros > sin posición), ordenados por edad desc
     const ordenPos = ['defensa', 'centrocampista', 'delantero', null]
     const restoPorPos = ordenPos.flatMap(pos => {
       const grupo = resto.filter(j => j.posicion === pos)
-      grupo.sort((a, b) => b.edad - a.edad)
+      grupo.sort((a, b) => (b.edad ?? 35) - (a.edad ?? 35))
       return grupo
     })
     repartirSnake(restoPorPos, equipos, tamaños)
+
+    // 5. Separar Iván Mejías y Franchi Benitez: si están en el mismo equipo, intercambiar uno
+    const ubicaciones = {}
+    equipos.forEach((eq, eIdx) => {
+      eq.forEach(j => {
+        if (j.esSeparado) ubicaciones[j.nombre?.toLowerCase().trim()] = eIdx
+      })
+    })
+    const claves = Object.keys(ubicaciones)
+    if (claves.length === 2 && ubicaciones[claves[0]] === ubicaciones[claves[1]]) {
+      const eqOrigen = ubicaciones[claves[1]]
+      const eqDestino = (eqOrigen + 1) % numEquipos
+      const jugadorMover = equipos[eqOrigen].find(j => j.nombre?.toLowerCase().trim() === claves[1])
+      const posObj = jugadorMover?.posicion
+      const candidato = equipos[eqDestino].find(j => !j.esSeparado && j.posicion === posObj)
+        ?? equipos[eqDestino].find(j => !j.esSeparado)
+      if (candidato && jugadorMover) {
+        equipos[eqOrigen] = equipos[eqOrigen].filter(j => j !== jugadorMover)
+        equipos[eqDestino] = equipos[eqDestino].filter(j => j !== candidato)
+        equipos[eqOrigen].push(candidato)
+        equipos[eqDestino].push(jugadorMover)
+      }
+    }
 
     const nuevosEquipos = {
       lista: equipos,
@@ -277,7 +309,7 @@ export default function DetalleEvento() {
           {evento.hora ? ` · ${evento.hora.slice(0,5)}` : ''}
         </div>
         <h1 style={{ color: 'white', fontSize: '22px', fontWeight: '600', marginBottom: '6px' }}>
-          {evento.titulo || 'Entreno'}
+          {evento.titulo || (evento.tipo ? evento.tipo.charAt(0).toUpperCase() + evento.tipo.slice(1) : 'Entreno')}
         </h1>
         {evento.lugar && (
           <div style={{ color: 'var(--azul-claro)', fontSize: '13px' }}>📍 {evento.lugar}</div>
