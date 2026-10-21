@@ -188,9 +188,11 @@ export default function DetalleEvento() {
         id: a.id,
         nombre,
         posicion: a.es_invitado ? (a.posicion_invitado || null) : (a.socios?.posiciones?.[0] || a.socios?.posicion || null),
+        posiciones: a.es_invitado ? [a.posicion_invitado || null] : (a.socios?.posiciones?.length ? a.socios.posiciones : [a.socios?.posicion || null]),
         edad,
         esSeparado: SEPARAR_APODOS.includes(nombre?.toLowerCase().trim()),
         esMayor55: edad !== null && edad > 55,
+        esSub35: edad !== null && edad < 35,
       }
     })
 
@@ -198,17 +200,9 @@ export default function DetalleEvento() {
     const tamañoBase = Math.floor(total / numEquipos)
     const extras = total % numEquipos
     const tamaños = Array.from({ length: numEquipos }, (_, i) => tamañoBase + (i < extras ? 1 : 0))
-
     const equipos = Array.from({ length: numEquipos }, () => [])
 
-    // Grupos prioritarios
-    const porteros = jugadores.filter(j => j.posicion === 'portero')
-    const sub35 = jugadores.filter(j => j.posicion !== 'portero' && j.edad !== null && j.edad < 35)
-    const mayor55 = jugadores.filter(j => j.posicion !== 'portero' && j.esMayor55)
-    const resto = jugadores.filter(j => j.posicion !== 'portero' && !j.esMayor55 && !(j.edad !== null && j.edad < 35))
-
-    // Función: repartir un array en ronda snake (0,1,2,2,1,0,...) entre equipos
-    function repartirSnake(lista, equipos, tamaños) {
+    function repartirSnake(lista) {
       let dir = 1
       let e = 0
       for (const jugador of lista) {
@@ -217,54 +211,64 @@ export default function DetalleEvento() {
           e = (e + dir + numEquipos) % numEquipos
           intentos++
         }
-        if (equipos[e].length < tamaños[e]) {
-          equipos[e].push(jugador)
-        }
-        e = e + dir
+        if (equipos[e].length < tamaños[e]) equipos[e].push(jugador)
+        e += dir
         if (e >= numEquipos) { e = numEquipos - 1; dir = -1 }
         if (e < 0) { e = 0; dir = 1 }
       }
     }
 
-    // 1. Porteros: uno por equipo en orden
-    porteros.sort(() => Math.random() - 0.5)
-    for (let i = 0; i < porteros.length; i++) {
-      const e = i % numEquipos
-      if (equipos[e].length < tamaños[e]) equipos[e].push(porteros[i])
-      else equipos[(i + 1) % numEquipos]?.push(porteros[i])
+    function intercalarEdades(lista) {
+      const mayores = lista.filter(j => j.esMayor55).sort(() => Math.random() - 0.5)
+      const jovenes = lista.filter(j => j.esSub35 && !j.esMayor55).sort(() => Math.random() - 0.5)
+      const medios = lista.filter(j => !j.esMayor55 && !j.esSub35).sort(() => Math.random() - 0.5)
+      const result = []
+      const maxLen = Math.max(mayores.length, medios.length, jovenes.length)
+      for (let i = 0; i < maxLen; i++) {
+        if (i < mayores.length) result.push(mayores[i])
+        if (i < medios.length) result.push(medios[i])
+        if (i < jovenes.length) result.push(jovenes[i])
+      }
+      return result
     }
 
-    // 2. Sub-35: repartir en snake para no concentrarlos
-    sub35.sort(() => Math.random() - 0.5)
-    repartirSnake(sub35, equipos, tamaños)
-
-    // 3. Mayores de 55: repartir en snake para no concentrarlos (variable extra)
-    mayor55.sort(() => Math.random() - 0.5)
-    repartirSnake(mayor55, equipos, tamaños)
-
-    // 4. Resto por posición (defensas > centros > delanteros > sin posición), ordenados por edad desc
-    const ordenPos = ['defensa', 'centrocampista', 'delantero', null]
-    const restoPorPos = ordenPos.flatMap(pos => {
-      const grupo = resto.filter(j => j.posicion === pos)
-      grupo.sort((a, b) => (b.edad ?? 35) - (a.edad ?? 35))
-      return grupo
+    // PASO 1: Porteros — uno por equipo en orden aleatorio
+    const porteros = jugadores.filter(j => j.posicion === 'portero')
+    porteros.sort(() => Math.random() - 0.5)
+    porteros.forEach((p, i) => {
+      const e = i % numEquipos
+      if (equipos[e].length < tamaños[e]) equipos[e].push(p)
+      else {
+        const libre = equipos.findIndex((eq, idx) => eq.length < tamaños[idx])
+        if (libre !== -1) equipos[libre].push(p)
+      }
     })
-    repartirSnake(restoPorPos, equipos, tamaños)
 
-    // 5. Separar Iván Mejías y Franchi Benitez: si están en el mismo equipo, intercambiar uno
+    // PASO 2: No porteros — distribuir por posición principal (garantiza 1 por equipo si hay 1 por posición)
+    const noPorteros = jugadores.filter(j => j.posicion !== 'portero')
+    const posicionesOrden = ['delantero', 'centrocampista', 'defensa', null]
+
+    for (const pos of posicionesOrden) {
+      const grupo = noPorteros.filter(j => j.posicion === pos)
+      if (grupo.length === 0) continue
+      repartirSnake(intercalarEdades(grupo))
+    }
+
+    // PASO 3: Corregir Iván / Franchi si quedaron en el mismo equipo
+    // Preferir jugadores multiposición como candidatos al intercambio
     const ubicaciones = {}
-    equipos.forEach((eq, eIdx) => {
-      eq.forEach(j => {
-        if (j.esSeparado) ubicaciones[j.nombre?.toLowerCase().trim()] = eIdx
-      })
-    })
+    equipos.forEach((eq, eIdx) => eq.forEach(j => {
+      if (j.esSeparado) ubicaciones[j.nombre?.toLowerCase().trim()] = eIdx
+    }))
     const claves = Object.keys(ubicaciones)
     if (claves.length === 2 && ubicaciones[claves[0]] === ubicaciones[claves[1]]) {
       const eqOrigen = ubicaciones[claves[1]]
       const eqDestino = (eqOrigen + 1) % numEquipos
       const jugadorMover = equipos[eqOrigen].find(j => j.nombre?.toLowerCase().trim() === claves[1])
       const posObj = jugadorMover?.posicion
-      const candidato = equipos[eqDestino].find(j => !j.esSeparado && j.posicion === posObj)
+      const candidato = equipos[eqDestino].find(j => !j.esSeparado && j.posicion === posObj && j.posiciones.length > 1)
+        ?? equipos[eqDestino].find(j => !j.esSeparado && j.posicion === posObj)
+        ?? equipos[eqDestino].find(j => !j.esSeparado && j.posiciones.length > 1)
         ?? equipos[eqDestino].find(j => !j.esSeparado)
       if (candidato && jugadorMover) {
         equipos[eqOrigen] = equipos[eqOrigen].filter(j => j !== jugadorMover)
@@ -283,7 +287,6 @@ export default function DetalleEvento() {
     await supabase.from('eventos').update({ equipos_generados: nuevosEquipos }).eq('id', id)
     setEvento(prev => ({ ...prev, equipos_generados: nuevosEquipos }))
   }
-
   async function borrarEquipos() {
     if (!confirm('¿Borrar los equipos generados?')) return
     await supabase.from('eventos').update({ equipos_generados: null }).eq('id', id)
