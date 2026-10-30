@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
-const categoriaOpciones = ['arbitro', 'equipacion', 'comida', 'viaje', 'instalaciones', 'tesoreria', 'otros']
+const categoriaOpciones = ['arbitro', 'equipacion', 'comida', 'viaje', 'instalaciones', 'tesoreria', 'solidario', 'otros']
 
 export default function AdminGastos() {
   const [gastos, setGastos] = useState([])
@@ -120,7 +120,7 @@ export default function AdminGastos() {
 
   const categoriaColor = {
     arbitro: '#8B2FC9', equipacion: 'var(--azul-marino)', comida: '#D4721A',
-    viaje: '#1D9E75', instalaciones: 'var(--azul-cielo)', otros: '#888',
+    viaje: '#1D9E75', instalaciones: 'var(--azul-cielo)', solidario: '#E63946', otros: '#888',
   }
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Cargando...</div>
