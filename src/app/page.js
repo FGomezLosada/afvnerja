@@ -43,6 +43,8 @@ export default async function Home() {
   const asistenciasEntrenos = asistenciasTemporada?.filter(a => entrenoIds.includes(a.evento_id)).length || 0
   const mediaAsistencia = entronosFinalizados > 0 ? (asistenciasEntrenos / entronosFinalizados).toFixed(1) : 0
   const totalBenefico = eventosBenefico?.reduce((sum, e) => sum + (e.recaudacion_benefica || 0), 0) || 0
+  const { data: gastosSolidarios } = await supabase.from('gastos').select('importe').eq('temporada_id', tempId).eq('categoria', 'solidario')
+  const totalSolidario = gastosSolidarios?.reduce((sum, g) => sum + (Number(g.importe) || 0), 0) || 0
 
   const statsTemporada = {
     socios: sociosActivos || 0,
@@ -53,6 +55,7 @@ export default async function Home() {
     torneos: torneosTemp,
     mediaAsistencia,
     benefico: totalBenefico,
+    solidario: totalSolidario,
   }
 
   const { data: golesData } = await supabase
@@ -268,6 +271,7 @@ export default async function Home() {
               { label: 'Partidos', valor: statsTemporada.partidos },
               { label: 'Torneos', valor: statsTemporada.torneos },
               { label: 'Recaudado benéfico', valor: `${statsTemporada.benefico}€` },
+              { label: 'Aportado solidario', valor: `${statsTemporada.solidario}€` },
             ].map(stat => (
               <div key={stat.label} style={{
                 backgroundColor: 'var(--azul-palido)',
